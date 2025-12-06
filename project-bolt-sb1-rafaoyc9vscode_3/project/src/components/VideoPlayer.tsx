@@ -12,6 +12,7 @@ interface VideoPlayerProps {
   isAudioMode?: boolean; // 新增：是否为音频模式
   onProgressUpdate?: (index: number) => void; // 新增：断点续播进度回传
   onFileMissing?: (videoId: string) => void;
+  onPlaybackStalled?: () => void; // 当播放在指定时间内未能开始时回调
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -23,6 +24,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   isAudioMode = false,
   onProgressUpdate,
   onFileMissing,
+  onPlaybackStalled,
 }) => {
   const [missingNotice, setMissingNotice] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -38,6 +40,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const startTimeoutRef = useRef<number | null>(null);
   const currentItem = playlist[currentIndex];
   const currentVideo = videos.find(v => v.id === currentItem?.videoId);
   const derivedAudioMode = currentVideo?.mediaType === 'audio';
@@ -48,6 +51,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [resumeTime, setResumeTime] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const lastSaveTimeRef = useRef<number>(0);
 
   // 使用 useRef 来避免 autoPlay 状态导致的重新渲染
@@ -73,179 +77,171 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       document.removeEventListener('click', handleUserInteraction);
     };
   }, []);
-
   useEffect(() => {
-    if (videoRef.current && currentVideo) {
-      setVideoError(false);
-      setIsLoading(true);
-      setRetryCount(0);
-      // 不在这里重置恢复提示状态，让 handleLoadedMetadata 来处理
-      
-      // 重置视频元素
-      const video = videoRef.current;
-      video.src = '';
-      video.load();
-      
-      // 设置新的视频源
-      video.src = currentVideo.fileUrl;
-      
-      // 音频模式设置
-      if (audioOnlyMode) {
-        video.style.display = 'none';
-      } else {
-        video.style.display = 'block';
-      }
-      
-      // iOS Safari 特殊设置
+    // unified media setup for audio or video element
+    const media: HTMLMediaElement | null = (audioOnlyMode ? audioRef.current : videoRef.current);
+    if (!media || !currentVideo) return;
+
+    setVideoError(false);
+    setIsLoading(true);
+    setRetryCount(0);
+
+    try { media.src = ''; media.load(); } catch (e) { /* ignore */ }
+    media.src = currentVideo.fileUrl;
+
+    if (!audioOnlyMode && videoRef.current) {
+      const v = videoRef.current;
       if (isIOS && isSafari) {
-        video.playsInline = true;
-        video.muted = false; // iOS Safari 不需要静音来自动播放
-        video.preload = 'auto'; // iOS 使用 auto 预加载
+        v.playsInline = true;
+        v.muted = false;
+        v.preload = 'auto';
       } else {
-        video.preload = 'metadata';
+        v.preload = 'metadata';
       }
-      
-      // 等待元数据加载
-      const handleLoadedMetadata = () => {
-        setIsLoading(false);
-        setDuration(video.duration);
-        
-        // 重置保存时间计时器
-        lastSaveTimeRef.current = 0;
-        
-        // 检查是否有播放进度需要恢复
-        const savedProgress = getVideoPlayProgress(currentVideo.id);
-        if (savedProgress > 10 && savedProgress < video.duration - 10) { // 至少播放了10秒且不在最后10秒
-          setResumeTime(savedProgress);
-          setShowResumePrompt(true);
-        } else {
-          setShowResumePrompt(false);
-          setResumeTime(0);
-        }
-      };
+      v.style.display = 'block';
+    }
+    if (audioOnlyMode && audioRef.current) {
+      audioRef.current.preload = 'auto';
+    }
 
-      const handleCanPlay = () => {
-        setIsLoading(false);
-        setVideoError(false);
-        
-        // 自动播放逻辑
-        if (autoPlayRef.current && currentIndex >= initialIndex && userInteracted) {
-          setTimeout(() => {
-            if (!videoError && video.readyState >= 2) {
-              const playPromise = video.play();
-              if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    console.log('Auto-play successful');
-                  })
-                  .catch(error => {
-                    console.log('Auto-play failed, user interaction required:', error);
-                    // iOS Safari 自动播放失败是正常的，不显示错误
-                    if (!isIOS) {
-                      setIsLoading(false);
-                    }
-                  });
-              }
+    const handleLoadedMetadata = () => {
+      setIsLoading(false);
+      setDuration(media.duration || 0);
+      lastSaveTimeRef.current = 0;
+
+      const savedProgress = getVideoPlayProgress(currentVideo.id);
+      if (savedProgress > 10 && savedProgress < (media.duration || 0) - 10) {
+        setResumeTime(savedProgress);
+        setShowResumePrompt(true);
+      } else {
+        setShowResumePrompt(false);
+        setResumeTime(0);
+      }
+    };
+
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setVideoError(false);
+      if (autoPlayRef.current && currentIndex >= initialIndex && userInteracted) {
+        setTimeout(() => {
+          if (!videoError && media.readyState >= 2) {
+            const playPromise = media.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('Auto-play successful');
+                if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
+              }).catch(error => {
+                console.log('Auto-play failed, user interaction required:', error);
+                if (!isIOS) setIsLoading(false);
+              });
             }
-          }, isIOS ? 100 : 500); // iOS 使用更短的延迟
-        } else {
-          setIsLoading(false);
-        }
-      };
-
-      const handleError = (e: any) => {
-        console.error('Video error:', e);
-        setIsLoading(false);
-
-        // If the current video exists, treat this as a missing/unavailable file and skip
-        if (currentVideo) {
-          // notify parent (App) so it can show a global notice or take other non-destructive action
-          try {
-            onFileMissing && onFileMissing(currentVideo.id);
-          } catch (err) {
-            console.error('onFileMissing handler failed', err);
           }
-
-          // show a transient in-player notice and skip to next after a short delay
-          setMissingNotice('视频文件未找到，已跳过');
-          setTimeout(() => {
-            setMissingNotice(null);
-            goToNext();
-          }, 1400);
-        } else {
-          // fallback to existing error UI when no currentVideo
-          setVideoError(true);
-        }
-      };
-
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
-      video.addEventListener('canplay', handleCanPlay);
-      video.addEventListener('error', handleError);
-
-      return () => {
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('error', handleError);
-      };
-    }
-  }, [currentIndex, currentVideo, audioOnlyMode, userInteracted]);
-
-  // 控制栏自动隐藏逻辑
-  const hideControlsAfterDelay = () => {
-    if (audioOnlyMode) {
-      if (controlsTimeout) {
-        clearTimeout(controlsTimeout);
+        }, isIOS ? 100 : 500);
+      } else {
+        setIsLoading(false);
       }
-      setShowControls(true);
-      return;
-    }
-    if (controlsTimeout) {
-      clearTimeout(controlsTimeout);
-    }
-    const timeout = window.setTimeout(() => {
-      setShowControls(false);
-    }, 3000); // 3秒后隐藏
-    setControlsTimeout(timeout);
-  };
+    };
+
+    const handleError = (e: any) => {
+      console.error('Media error:', e);
+      setIsLoading(false);
+      if (currentVideo) {
+        try { onFileMissing && onFileMissing(currentVideo.id); } catch (err) { console.error(err); }
+        setMissingNotice('媒体文件未找到，已跳过');
+        setTimeout(() => { setMissingNotice(null); goToNext(); }, 1400);
+      } else { setVideoError(true); }
+    };
+
+    const handleTimeUpdateLocal = () => {
+      if (!media || !currentVideo) return;
+      const t = media.currentTime;
+      setCurrentTime(t);
+      const now = Date.now();
+      if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
+        if (t > 0) { saveVideoPlayProgress(currentVideo.id, currentVideo.name, t); lastSaveTimeRef.current = now; }
+      }
+    };
+
+    const handleEndedLocal = () => {
+      if (currentVideo) clearVideoPlayProgress(currentVideo.id);
+      if (autoPlayRef.current && currentIndex < playlist.length - 1) { goToNext(); }
+      else if (currentIndex >= playlist.length - 1) { onPlaylistComplete(); }
+    };
+
+    media.addEventListener('loadedmetadata', handleLoadedMetadata);
+    media.addEventListener('canplay', handleCanPlay);
+    media.addEventListener('error', handleError);
+    media.addEventListener('timeupdate', handleTimeUpdateLocal);
+    media.addEventListener('ended', handleEndedLocal);
+
+    const START_WAIT_MS = 30000;
+    if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); }
+    startTimeoutRef.current = window.setTimeout(() => {
+      if (!media || !isPlaying) {
+        console.warn('Playback did not start within timeout');
+        try { onPlaybackStalled && onPlaybackStalled(); } catch (e) { console.error(e); }
+      }
+    }, START_WAIT_MS);
+
+    return () => {
+      media.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      media.removeEventListener('canplay', handleCanPlay);
+      media.removeEventListener('error', handleError);
+      media.removeEventListener('timeupdate', handleTimeUpdateLocal);
+      media.removeEventListener('ended', handleEndedLocal);
+      if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
+    };
+  }, [currentIndex, currentVideo, audioOnlyMode, userInteracted]);
 
   const showControlsTemporarily = () => {
     setShowControls(true);
+    // reuse hideControlsAfterDelay defined later
     hideControlsAfterDelay();
   };
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      showControlsTemporarily();
+  const hideControlsAfterDelay = () => {
+    // 在音频模式下常显控制，直接保持显示
+    if (audioOnlyMode) {
+      if (controlsTimeout) { clearTimeout(controlsTimeout); }
+      setShowControls(true);
+      return;
     }
+    if (controlsTimeout) { clearTimeout(controlsTimeout); }
+    const timeout = window.setTimeout(() => { setShowControls(false); }, 3000);
+    setControlsTimeout(timeout);
+  };
+  const getActiveMedia = () => (audioOnlyMode ? audioRef.current : videoRef.current);
+
+  const togglePlay = () => {
+    const m = getActiveMedia();
+    if (!m) return;
+    if (isPlaying) {
+      m.pause();
+    } else {
+      const playPromise = m.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+      if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
+    }
+    showControlsTemporarily();
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current && currentVideo) {
-      const currentTime = videoRef.current.currentTime;
-      setCurrentTime(currentTime);
-      
-      // 使用时间间隔保存播放进度，避免依赖精确的整数秒
-      const now = Date.now();
-      if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) { // 每5秒保存一次
-        if (currentTime > 0) {
-          saveVideoPlayProgress(currentVideo.id, currentVideo.name, currentTime);
-          lastSaveTimeRef.current = now;
-        }
-      }
+    const m = getActiveMedia();
+    if (!m || !currentVideo) return;
+    const currentTime = m.currentTime;
+    setCurrentTime(currentTime);
+    const now = Date.now();
+    if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
+      if (currentTime > 0) { saveVideoPlayProgress(currentVideo.id, currentVideo.name, currentTime); lastSaveTimeRef.current = now; }
     }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
+    const m = getActiveMedia();
+    if (m) { m.currentTime = time; setCurrentTime(time); }
   };
 
   // 恢复前进/后退与时间格式化函数
@@ -279,10 +275,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const resumePlayback = () => {
-    if (videoRef.current && resumeTime > 0) {
-      videoRef.current.currentTime = resumeTime;
-      setCurrentTime(resumeTime);
-    }
+    const m = getActiveMedia();
+    if (m && resumeTime > 0) { m.currentTime = resumeTime; setCurrentTime(resumeTime); }
     setShowResumePrompt(false);
     showControlsTemporarily();
   };
@@ -314,15 +308,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setVideoError(false);
       setIsLoading(true);
       
-      if (videoRef.current && currentVideo) {
-        const video = videoRef.current;
-        video.src = '';
-        video.load();
-        video.src = currentVideo.fileUrl;
-        
+      const m = getActiveMedia();
+      if (m && currentVideo) {
+        m.src = '';
+        m.load();
+        m.src = currentVideo.fileUrl;
         setTimeout(() => {
-          if (video.readyState >= 2) {
-            const playPromise = video.play();
+          if (m.readyState >= 2) {
+            const playPromise = m.play();
             if (playPromise !== undefined) {
               playPromise.catch(error => {
                 console.error('Retry play failed:', error);
@@ -463,20 +456,23 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </div>
             )}
             
+            <audio
+              ref={audioRef}
+              className={`w-full ${audioOnlyMode ? 'block' : 'hidden'}`}
+              onPlay={() => { setIsPlaying(true); hideControlsAfterDelay(); }}
+              onPause={() => { setIsPlaying(false); setShowControls(true); if (controlsTimeout) { clearTimeout(controlsTimeout); } }}
+              onEnded={handleVideoEnded}
+              onTimeUpdate={handleTimeUpdate}
+              onClick={showControlsTemporarily}
+              onTouchStart={showControlsTemporarily}
+              controls={false}
+            />
+
             <video
               ref={videoRef}
               className={`w-full h-full bg-black ${audioOnlyMode ? 'hidden' : 'block'}`}
-              onPlay={() => {
-                setIsPlaying(true);
-                hideControlsAfterDelay();
-              }}
-              onPause={() => {
-                setIsPlaying(false);
-                setShowControls(true);
-                if (controlsTimeout) {
-                  clearTimeout(controlsTimeout);
-                }
-              }}
+              onPlay={() => { setIsPlaying(true); hideControlsAfterDelay(); }}
+              onPause={() => { setIsPlaying(false); setShowControls(true); if (controlsTimeout) { clearTimeout(controlsTimeout); } }}
               onEnded={handleVideoEnded}
               onTimeUpdate={handleTimeUpdate}
               onClick={showControlsTemporarily}

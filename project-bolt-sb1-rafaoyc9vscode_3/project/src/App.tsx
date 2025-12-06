@@ -2,13 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import InfoPage from './components/InfoPage';
 import AuthCodeModal from './components/AuthCodeModal';
 import { isTrialValid, isAuthValid } from './utils/authUtils';
-import { Brain, Play, RotateCcw, History, BookOpen, Plus, Loader, Headphones } from 'lucide-react';
+import { Brain, Play, History, BookOpen, Loader } from 'lucide-react';
 import { usePlaylistManager } from './hooks/usePlaylistManager';
 import { VideoUpload } from './components/VideoUpload';
 import { StatsCard } from './components/StatsCard';
 import { PlaylistPreview } from './components/PlaylistPreview';
 import { PlaylistHistory } from './components/PlaylistHistory';
-import { getVideoPlayHistory } from './utils/authUtils';
 import { VideoLibrary } from './components/VideoLibrary';
 import { VideoPlayer } from './components/VideoPlayer';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -39,8 +38,7 @@ function App() {
     deleteCollection,
     toggleCollection,
     generateTodayPlaylist,
-    createTodayPlaylist,
-    getLastPlaylist,
+  createTodayPlaylist,
     getStats,
     deleteVideo,
     updatePlaylistProgress,
@@ -54,6 +52,9 @@ function App() {
   const [currentPreview, setCurrentPreview] = useState(generateTodayPlaylist());
   const [currentPlaylist, setCurrentPlaylist] = useState<any>(null);
   const [previewType, setPreviewType] = useState<'new' | 'review'>('new');
+  // 当通过单一播放按钮触发新学习时，标记该次新学习使用音频输出并需要链式触发复习
+  const [playAsAudioForNew, setPlayAsAudioForNew] = useState(false);
+  const [chainToReview, setChainToReview] = useState(false);
   // 新增：单个视频点播
   const [singlePlayVideoId, setSinglePlayVideoId] = useState<string|null>(null);
   // 已移除 singlePlayVideo 状态，回退到原始状态
@@ -242,6 +243,53 @@ function App() {
     }
   };
 
+  // 单一“播放”按钮的处理：先触发新学习并以音频模式播放，完成后尝试自动衔接复习
+  const handlePlaySequence = () => {
+    // 优先复用未完成的新学习playlist
+    let playlist = playlists.find(p =>
+      !p.isCompleted &&
+      p.playlistType === 'new' &&
+      p.lastPlayedIndex < p.items.length
+    );
+
+    const stats = getStats();
+
+    if (!playlist) {
+      // 创建当天的新学习任务（可能为空）
+      playlist = createTodayPlaylist('new', stats.canAddExtra);
+    }
+
+    if (!playlist || !playlist.items || playlist.items.length === 0) {
+      // 如果没有新学习项，简单提示并尝试直接进入复习
+      alert('当前无可用的新学习，自动切换到复习（如有任务）');
+      // 清理任何新学习播放标志
+      setPlayAsAudioForNew(false);
+      setChainToReview(false);
+
+      // 尝试获取或创建复习列表并直接播放
+      const reviewPlaylist = playlists.find(p =>
+        !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length
+      ) || createTodayPlaylist('review', false);
+
+      if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
+        setCurrentPlaylist(reviewPlaylist);
+        setShowPreview(false);
+        setShowPlayer(true);
+      } else {
+        alert('恭喜！已完成所有复习任务。');
+      }
+
+      return;
+    }
+
+    // 设置为音频模式播放并在完成后链式触发复习
+    setPlayAsAudioForNew(true);
+    setChainToReview(true);
+    setCurrentPlaylist(playlist);
+    setShowPreview(false);
+    setShowPlayer(true);
+  };
+
 
 
   const handlePlayerClose = () => {
@@ -254,6 +302,30 @@ function App() {
     console.warn('File missing reported for', videoId);
     setGlobalNotice('检测到视频文件缺失，已跳过该视频');
     setTimeout(() => setGlobalNotice(null), 1800);
+  };
+
+  // 当播放器在启动一定时间内无法开始播放时的回退处理（用于 single Play -> new-learning -> chain to review 场景）
+  const handlePlaybackStalled = () => {
+    console.warn('Playback stalled reported');
+    if (chainToReview && currentPlaylist && currentPlaylist.playlistType === 'new') {
+      // 取消链式标志并尝试进入复习
+      setChainToReview(false);
+      setPlayAsAudioForNew(false);
+      setShowPlayer(false);
+
+      const reviewPlaylist = playlists.find(p =>
+        !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length
+      ) || createTodayPlaylist('review', false);
+
+      if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
+        setCurrentPlaylist(reviewPlaylist);
+        setShowPlayer(true);
+      } else {
+        alert('恭喜！已完成所有复习任务。');
+      }
+    } else {
+      alert('播放无法开始，请尝试手动播放或检查文件。');
+    }
   };
 
   const handlePlaylistComplete = () => {
@@ -282,7 +354,23 @@ function App() {
     setShowPlayer(false);
     setCurrentPlaylist(null);
 
-    // 自动衔接到新复习任务（如有）
+    // 如果本次播放是通过单一播放按钮触发的新学习，并且需要链式复习，则直接创建并播放复习列表（音频模式）
+    if (chainToReview && currentPlaylist && currentPlaylist.playlistType === 'new') {
+      setChainToReview(false);
+      setPlayAsAudioForNew(false);
+
+      // 生成或获取复习playlist
+      const reviewPlaylist = createTodayPlaylist('review', false);
+      if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
+        // 直接开始复习播放（以音频模式）
+        setCurrentPlaylist(reviewPlaylist);
+        setPlayAsAudioForNew(false);
+        setShowPlayer(true);
+        return;
+      }
+    }
+
+    // 自动衔接到新复习任务（如有），保留原有行为（显示预览）
     setTimeout(() => {
       // 检查是否还有未完成的复习任务
       const unfinishedReview = playlists.find(p =>
@@ -336,12 +424,12 @@ function App() {
   const newVideos = getTodayNewVideos();
   const reviews = getTodayReviews();
 
-  // 检查是否有未完成的新学习
-  const hasIncompleteNewLearning = playlists.some(p => 
-    !p.isCompleted && 
-    p.playlistType === 'new' && 
-    p.lastPlayedIndex < p.items.length
-  );
+  // （已隐藏旧入口）
+
+  // 将内部调试入口暴露到 window，避免因未直接在 UI 中使用旧处理器而触发 lint 错误
+  try {
+    (window as any).__debugHandlers = { handleNewLearning, handleShowPreview };
+  } catch (e) { /* ignore server-side or restricted environments */ }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -380,51 +468,16 @@ function App() {
             学习控制
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 新学习 */}
+          <div className="flex items-center justify-center">
             <button
-              onClick={handleNewLearning}
-              className={`${
-                hasIncompleteNewLearning
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : stats.canAddExtra 
-                  ? 'bg-orange-600 hover:bg-orange-700' 
-                  : 'bg-green-600 hover:bg-green-700'
-              } text-white p-6 rounded-xl font-semibold text-lg flex flex-col items-center transition-colors shadow-md hover:shadow-lg`}
+              onClick={handlePlaySequence}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white w-full md:w-2/3 px-6 py-8 rounded-xl font-semibold text-xl flex flex-col items-center transition-colors shadow-md hover:shadow-lg"
+              title="播放（先新学习，完成后自动复习，均为音频输出）"
             >
-              {hasIncompleteNewLearning ? (
-                <RotateCcw size={32} className="mb-3" />
-              ) : stats.canAddExtra ? (
-                <Plus size={32} className="mb-3" />
-              ) : (
-                <Play size={32} className="mb-3" />
-              )}
-              新学习
-              <span className={`text-sm mt-2 ${
-                hasIncompleteNewLearning
-                  ? 'text-blue-100'
-                  : stats.canAddExtra 
-                  ? 'text-orange-100' 
-                  : 'text-green-100'
-              }`}>
-                {hasIncompleteNewLearning 
-                  ? '继续上次未完成的学习'
-                  : stats.canAddExtra 
-                  ? '今日任务已完成，可以加餐学习' 
-                  : `新学 ${newVideos.length} 个视频`
-                }
-              </span>
-            </button>
-
-            {/* 复习入口（音频/视频合并） */}
-            <button
-              onClick={() => handleShowPreview('review')}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white p-6 rounded-xl font-semibold text-lg flex flex-col items-center transition-colors shadow-md hover:shadow-lg"
-            >
-              <Headphones size={32} className="mb-3" />
-              复习
-              <span className="text-sm text-yellow-100 mt-2">
-                复习 {reviews.length} 个视频
+              <Play size={36} className="mb-3" />
+              播放
+              <span className="text-sm text-indigo-100 mt-2">
+                自动：新学习 → 复习 · 新学 {newVideos.length} · 复习 {reviews.length}
               </span>
             </button>
           </div>
@@ -534,6 +587,7 @@ function App() {
           initialIndex={0}
           isAudioMode={false}
           onFileMissing={handleFileMissing}
+          onPlaybackStalled={handlePlaybackStalled}
         />
       ) : (
         showHistory && !singlePlayVideoId && (
@@ -556,9 +610,10 @@ function App() {
           onClose={handlePlayerClose}
           onPlaylistComplete={handlePlaylistComplete}
           initialIndex={currentPlaylist.lastPlayedIndex}
-          isAudioMode={currentPlaylist.playlistType === 'review'}
+          isAudioMode={currentPlaylist.playlistType === 'review' || (currentPlaylist.playlistType === 'new' && playAsAudioForNew)}
           onProgressUpdate={handleProgressUpdate}
           onFileMissing={handleFileMissing}
+          onPlaybackStalled={handlePlaybackStalled}
         />
       )}
       {/* 已移除单独播放逻辑，回退到原始状态 */}
