@@ -162,17 +162,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
     };
 
-    const handleEndedLocal = () => {
-      if (currentVideo) clearVideoPlayProgress(currentVideo.id);
-      if (autoPlayRef.current && currentIndex < playlist.length - 1) { goToNext(); }
-      else if (currentIndex >= playlist.length - 1) { onPlaylistComplete(); }
-    };
-
     media.addEventListener('loadedmetadata', handleLoadedMetadata);
     media.addEventListener('canplay', handleCanPlay);
     media.addEventListener('error', handleError);
     media.addEventListener('timeupdate', handleTimeUpdateLocal);
-    media.addEventListener('ended', handleEndedLocal);
 
     const START_WAIT_MS = 30000;
     if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); }
@@ -188,7 +181,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       media.removeEventListener('canplay', handleCanPlay);
       media.removeEventListener('error', handleError);
       media.removeEventListener('timeupdate', handleTimeUpdateLocal);
-      media.removeEventListener('ended', handleEndedLocal);
       if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
     };
   }, [currentIndex, currentVideo, audioOnlyMode, userInteracted]);
