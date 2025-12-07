@@ -329,29 +329,57 @@ export const usePlaylistManager = () => {
     const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
     const activeVideos = videos.filter(v => activeCollectionIds.includes(v.collectionId));
 
+    // 判断视频是否应该复习
+    // 条件：
+    //  1. 有 nextReviewDate（即已学习过）
+    //  2. 状态不是 'completed'（未完全学完）
+    //  3. nextReviewDate 的日期 <= 今天的日期（已到复习时间或逾期）
     const reviewVideos = activeVideos.filter(video => {
+      // 排除没有复习日期或已完成的视频
       if (!video.nextReviewDate || video.status === 'completed') return false;
+      
+      // 比较日期（不比较时间部分）
       const reviewDate = new Date(video.nextReviewDate);
       reviewDate.setHours(0, 0, 0, 0);
-      return reviewDate.getTime() <= today.getTime();
+      
+      // 如果复习日期 <= 今天，则应该复习
+      // 这包括：
+      // - 昨天学习、今天复习的情况
+      // - 前几天学习、今天复习的情况
+      // - 逾期的情况
+      const shouldReview = reviewDate.getTime() <= today.getTime();
+      
+      if (!shouldReview && video.reviewCount === 0) {
+        // 首次学习后，通常 nextReviewDate 被设为明天，但由于时区或时差可能需要容错
+        // 如果视频是刚学完的（reviewCount === 0），给予 48 小时容错窗口
+        const now = new Date();
+        const timeSinceNextReview = now.getTime() - (video.nextReviewDate?.getTime() || 0);
+        if (Math.abs(timeSinceNextReview) < 48 * 60 * 60 * 1000) {
+          // 在 48 小时内，容许显示
+          return true;
+        }
+      }
+      
+      return shouldReview;
     });
 
     // 调试日志：帮助诊断为什么没有复习任务
     if (reviewVideos.length === 0 && activeVideos.some(v => v.nextReviewDate && v.status !== 'completed')) {
       console.debug('getTodayReviews 调试信息:', {
         todayTime: today.getTime(),
+        todayDate: today.toISOString(),
         totalActiveVideos: activeVideos.length,
         videosWithNextReviewDate: activeVideos.filter(v => v.nextReviewDate && v.status !== 'completed').length,
         sampleVideoWithReview: activeVideos
           .filter(v => v.nextReviewDate && v.status !== 'completed')
-          .slice(0, 1)
+          .slice(0, 3)
           .map(v => ({
             id: v.id,
             status: v.status,
             reviewCount: v.reviewCount,
-            nextReviewDate: v.nextReviewDate,
-            nextReviewTime: v.nextReviewDate?.getTime(),
-            isMissed: v.nextReviewDate ? v.nextReviewDate.getTime() <= today.getTime() : false,
+            nextReviewDate: v.nextReviewDate?.toISOString(),
+            reviewDateAtNoon: new Date(v.nextReviewDate || 0).setHours(0, 0, 0, 0),
+            shouldReview: v.nextReviewDate ? new Date(v.nextReviewDate).setHours(0, 0, 0, 0) <= today.getTime() : false,
           })),
       });
     }
