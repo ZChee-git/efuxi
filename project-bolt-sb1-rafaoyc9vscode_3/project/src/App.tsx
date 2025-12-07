@@ -245,19 +245,11 @@ function App() {
 
   // 单一“播放”按钮的处理：先触发新学习并以音频模式播放，完成后尝试自动衔接复习
   const handlePlaySequence = () => {
-    // 优先复用未完成的新学习playlist
-    let playlist = playlists.find(p =>
-      !p.isCompleted &&
-      p.playlistType === 'new' &&
-      p.lastPlayedIndex < p.items.length
-    );
-
     const stats = getStats();
 
-    if (!playlist) {
-      // 创建当天的新学习任务（可能为空）
-      playlist = createTodayPlaylist('new', stats.canAddExtra);
-    }
+    // 每次点击 Play 按钮时，强制重新获取最新的新视频（包括新添加的）
+    // 使用 forceNew=true 参数，忽略已完成的 playlist 缓存，确保新添加的视频也能播放
+    const playlist = createTodayPlaylist('new', stats.canAddExtra, true);
 
     if (!playlist || !playlist.items || playlist.items.length === 0) {
       // 如果没有新学习项，简单提示并尝试直接进入复习

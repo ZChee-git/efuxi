@@ -362,12 +362,12 @@ export const usePlaylistManager = () => {
     };
   };
 
-  const createTodayPlaylist = (playlistType: 'new' | 'review', isExtraSession: boolean = false): DailyPlaylist => {
+  const createTodayPlaylist = (playlistType: 'new' | 'review', isExtraSession: boolean = false, forceNew: boolean = false): DailyPlaylist => {
     let items: PlaylistItem[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     // 检查当天是否已有未完成的新学习任务，避免重复生成
-    if (playlistType === 'new') {
+    if (playlistType === 'new' && !forceNew) {
       const exist = playlists.find(p => {
         if (p.playlistType !== 'new' || p.isCompleted) return false;
         const pDate = new Date(p.date);
@@ -375,6 +375,9 @@ export const usePlaylistManager = () => {
         return pDate.getTime() === today.getTime();
       });
       if (exist) return exist;
+      items = getTodayNewVideos(isExtraSession);
+    } else if (playlistType === 'new' && forceNew) {
+      // 强制重新获取所有新视频（包括新添加的），忽略已完成的 playlist
       items = getTodayNewVideos(isExtraSession);
     } else if (playlistType === 'review') {
       items = getTodayReviews();
