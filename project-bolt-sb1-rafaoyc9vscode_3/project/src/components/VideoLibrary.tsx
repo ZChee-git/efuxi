@@ -32,8 +32,8 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({ videos, collections,
   };
 
   const getProgressText = (video: VideoFile) => {
-    if (video.status === 'completed') return '6/6';
-    return `${video.reviewCount}/6`;
+    if (video.status === 'completed') return '5/5';
+    return `${video.reviewCount}/5`;
   };
 
   const getCollectionName = (collectionId: string) => {
