@@ -60,60 +60,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
-  // 初始化 Media Session API (用于息屏播放)
-  useEffect(() => {
-    if (!audioOnlyMode || !currentVideo) return;
-
-    // 检查浏览器是否支持 MediaSession API
-    if ('mediaSession' in navigator) {
-      const mediaSession = navigator.mediaSession;
-      
-      // 设置元数据
-      mediaSession.metadata = new MediaMetadata({
-        title: currentVideo.name,
-        artist: '视频学习智能系统',
-        artwork: [
-          {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      });
-
-      // 处理锁屏播放控制
-      mediaSession.setActionHandler('play', () => {
-        const audio = audioRef.current;
-        if (audio) {
-          audio.play().catch(err => console.log('Play failed:', err));
-        }
-      });
-
-      mediaSession.setActionHandler('pause', () => {
-        const audio = audioRef.current;
-        if (audio) {
-          audio.pause();
-        }
-      });
-
-      mediaSession.setActionHandler('previoustrack', () => {
-        goToPrevious();
-      });
-
-      mediaSession.setActionHandler('nexttrack', () => {
-        goToNext();
-      });
-
-      // 设置播放状态
-      mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-    }
-  }, [audioOnlyMode, currentVideo, isPlaying]);
-
   // 监听用户交互
   useEffect(() => {
     const handleUserInteraction = () => {
@@ -510,9 +456,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               onTimeUpdate={handleTimeUpdate}
               onClick={showControlsTemporarily}
               onTouchStart={showControlsTemporarily}
-              controls={true}
-              controlsList="nodownload"
-              crossOrigin="anonymous"
+              controls={false}
             />
 
             <video
@@ -531,8 +475,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </>
         )}
 
-        {/* Controls Overlay - 视频模式下显示自定义控制，音频模式下隐藏（使用系统原生控制） */}
-        {!videoError && !audioOnlyMode && (showControls || audioOnlyMode) && (
+        {/* Controls Overlay - 音频模式下常显 */}
+        {!videoError && (showControls || audioOnlyMode) && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
             {/* Progress Bar */}
             <div className="mb-6">
