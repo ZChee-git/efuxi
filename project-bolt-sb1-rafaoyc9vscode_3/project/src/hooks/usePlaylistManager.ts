@@ -491,6 +491,18 @@ export const usePlaylistManager = () => {
       : 0;
     // 检查是否可以加餐（今日任务已完成）
     const canAddExtra = newVideos.length === 0 && activeVideos.some(v => v.status === 'new');
+    
+    // 调试日志：统计数据
+    console.debug('getStats 统计数据:', {
+      totalVideos,
+      completedVideos,
+      todayNewCount: newVideos.length,
+      todayReviewCount: reviews.length,
+      overallProgress,
+      activeCollections: collections.filter(c => c.isActive).length,
+      canAddExtra,
+    });
+    
     return {
       totalVideos,
       completedVideos,

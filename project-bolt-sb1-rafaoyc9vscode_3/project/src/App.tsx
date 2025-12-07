@@ -428,6 +428,9 @@ function App() {
   const newVideos = getTodayNewVideos();
   const reviews = getTodayReviews();
 
+  // 调试日志：传入 StatsCard 的数据
+  console.debug('App.tsx StatsCard props:', stats);
+
   // （已隐藏旧入口）
 
   // 将内部调试入口暴露到 window，避免因未直接在 UI 中使用旧处理器而触发 lint 错误
