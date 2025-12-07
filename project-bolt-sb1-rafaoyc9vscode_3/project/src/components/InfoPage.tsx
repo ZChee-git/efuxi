@@ -37,7 +37,7 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div className="mb-4 text-gray-700 space-y-2">
           <div style={{marginBottom: '1.5em', textAlign: 'justify'}}>
             <br />
-            &emsp;&emsp;本应用基于艾宾浩斯记忆遗忘曲线理论设计复习时点，帮助用户在90天内的关键时间点进行高效复习。
+            &emsp;&emsp;本应用基于艾宾浩斯记忆遗忘曲线理论设计复习时点，帮助用户在30天内的关键时间点进行高效复习（第2、第4、第8、第15、第30天）。
             <br />
           </div>
           <div>版本：1.5</div>
