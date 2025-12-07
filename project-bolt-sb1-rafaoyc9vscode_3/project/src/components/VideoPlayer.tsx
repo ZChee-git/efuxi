@@ -26,7 +26,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onFileMissing,
   onPlaybackStalled,
 }) => {
-  const [missingNotice, setMissingNotice] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   // 每次currentIndex变化时，回传进度
   useEffect(() => {
@@ -147,8 +146,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsLoading(false);
       if (currentVideo) {
         try { onFileMissing && onFileMissing(currentVideo.id); } catch (err) { console.error(err); }
-        setMissingNotice('媒体文件未找到，已跳过');
-        setTimeout(() => { setMissingNotice(null); goToNext(); }, 1400);
+        // 文件缺失（用户删除）时，无声地跳过到下一个视频，不显示提示
+        setTimeout(() => { goToNext(); }, 100);
       } else { setVideoError(true); }
     };
 
@@ -474,13 +473,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               style={{ objectFit: 'contain' }}
             />
           </>
-        )}
-        
-        {/* Transient missing-file notice (non-blocking) */}
-        {missingNotice && (
-          <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-400 text-black px-4 py-2 rounded shadow">
-            {missingNotice}
-          </div>
         )}
 
         {/* Controls Overlay - 音频模式下常显 */}
