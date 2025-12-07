@@ -252,22 +252,33 @@ function App() {
     const playlist = createTodayPlaylist('new', stats.canAddExtra, true);
 
     if (!playlist || !playlist.items || playlist.items.length === 0) {
-      // 如果没有新学习项，简单提示并尝试直接进入复习
-      alert('当前无可用的新学习，自动切换到复习（如有任务）');
-      // 清理任何新学习播放标志
+      // 如果没有新学习项，无声地切换到复习（不显示 alert 打扰用户）
+      console.log('handlePlaySequence: 无新学习任务，自动切换到复习');
       setPlayAsAudioForNew(false);
       setChainToReview(false);
 
       // 尝试获取或创建复习列表并直接播放
-      const reviewPlaylist = playlists.find(p =>
+      // 优先复用未完成的复习 playlist，避免重复生成
+      let reviewPlaylist = playlists.find(p =>
         !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length
-      ) || createTodayPlaylist('review', false);
+      );
+
+      // 如果没有未完成的复习 playlist，强制创建新的
+      if (!reviewPlaylist) {
+        reviewPlaylist = createTodayPlaylist('review', false);
+        console.log('handlePlaySequence: 创建新的复习列表', {
+          itemCount: reviewPlaylist?.items?.length || 0,
+          playlistId: reviewPlaylist?.id,
+        });
+      }
 
       if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
+        console.log('handlePlaySequence: 开始复习，项数=' + reviewPlaylist.items.length);
         setCurrentPlaylist(reviewPlaylist);
         setShowPreview(false);
         setShowPlayer(true);
       } else {
+        console.warn('handlePlaySequence: 既无新学习也无复习任务');
         alert('恭喜！已完成所有复习任务。');
       }
 
@@ -275,6 +286,7 @@ function App() {
     }
 
     // 设置为音频模式播放并在完成后链式触发复习
+    console.log('handlePlaySequence: 开始新学习，项数=' + playlist.items.length);
     setPlayAsAudioForNew(true);
     setChainToReview(true);
     setCurrentPlaylist(playlist);

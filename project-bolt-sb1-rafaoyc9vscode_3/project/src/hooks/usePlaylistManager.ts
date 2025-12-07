@@ -336,6 +336,26 @@ export const usePlaylistManager = () => {
       return reviewDate.getTime() <= today.getTime();
     });
 
+    // 调试日志：帮助诊断为什么没有复习任务
+    if (reviewVideos.length === 0 && activeVideos.some(v => v.nextReviewDate && v.status !== 'completed')) {
+      console.debug('getTodayReviews 调试信息:', {
+        todayTime: today.getTime(),
+        totalActiveVideos: activeVideos.length,
+        videosWithNextReviewDate: activeVideos.filter(v => v.nextReviewDate && v.status !== 'completed').length,
+        sampleVideoWithReview: activeVideos
+          .filter(v => v.nextReviewDate && v.status !== 'completed')
+          .slice(0, 1)
+          .map(v => ({
+            id: v.id,
+            status: v.status,
+            reviewCount: v.reviewCount,
+            nextReviewDate: v.nextReviewDate,
+            nextReviewTime: v.nextReviewDate?.getTime(),
+            isMissed: v.nextReviewDate ? v.nextReviewDate.getTime() <= today.getTime() : false,
+          })),
+      });
+    }
+
     // 按复习次数排序，优先处理逾期时间长的
     reviewVideos.sort((a, b) => {
       if (!a.nextReviewDate || !b.nextReviewDate) return 0;
