@@ -42,8 +42,8 @@ function App() {
     getStats,
     deleteVideo,
     updatePlaylistProgress,
-    getTodayNewVideos,
-    getTodayReviews,
+  // getTodayNewVideos,
+  // getTodayReviews,
   } = usePlaylistManager();
 
   const [showPreview, setShowPreview] = useState(false);
@@ -119,7 +119,7 @@ function App() {
         p.playlistType === 'review' &&
         p.lastPlayedIndex < p.items.length
       );
-      const todayReviews = getTodayReviews();
+  const todayReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.type === 'review')) : [];
       const allReviewItems = [
         ...unfinished.flatMap(p => p.items.slice(p.lastPlayedIndex)),
         ...todayReviews
@@ -384,7 +384,7 @@ function App() {
       );
       if (!unfinishedReview) {
         // 没有未完成的复习任务，尝试生成新复习任务
-        const newReviews = getTodayReviews();
+  const newReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.type === 'review')) : [];
         if (newReviews && newReviews.length > 0) {
           const preview = generateTodayPlaylist(false);
           setCurrentPreview(preview);
@@ -425,8 +425,7 @@ function App() {
   }
 
   const stats = getStats();
-  const newVideos = getTodayNewVideos();
-  const reviews = getTodayReviews();
+  // 已移除 newVideos 和 reviews 变量（不再用于学习控制栏显示）
 
   // 调试日志：传入 StatsCard 的数据
   console.debug('App.tsx StatsCard props:', stats);
@@ -483,9 +482,6 @@ function App() {
             >
               <Play size={36} className="mb-3" />
               播放
-              <span className="text-sm text-indigo-100 mt-2">
-                自动：新学习 → 复习 · 新学 {newVideos.length} · 复习 {reviews.length}
-              </span>
             </button>
           </div>
 
