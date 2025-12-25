@@ -49,6 +49,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [resumeTime, setResumeTime] = useState(0);
+  const [missingNotice, setMissingNotice] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastSaveTimeRef = useRef<number>(0);
@@ -322,13 +323,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  const handleClose = () => {
-    if (window.history.length > 1) {
-      window.history.pushState(null, '', window.location.href);
-    }
-    onClose();
-  };
-
   // 监听浏览器返回按钮
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -345,21 +339,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, []); // 移除 onClose 依赖，避免循环
 
-  if (!currentVideo) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 text-center max-w-sm mx-4">
-          <p className="text-xl text-gray-800 mb-4">视频文件未找到</p>
-          <button
-            onClick={handleClose}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg"
-          >
-            关闭
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // 当 currentVideo 不存在（例如用户已删除该视频）时，做非阻塞的提示并自动跳过
+  useEffect(() => {
+    if (currentVideo) return; // 有视频则无事
+
+    const missingId = currentItem?.videoId;
+    // 通知上层该文件缺失（上层可用于清理 playlist）
+    try { onFileMissing && onFileMissing(missingId as string); } catch (e) { console.error(e); }
+
+    // 显示短暂通知并自动跳过到下一条或结束播放列表
+    setMissingNotice('视频文件未找到，已跳过');
+    const t = window.setTimeout(() => {
+      setMissingNotice(null);
+      if (currentIndex < playlist.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setIsPlaying(false);
+        setVideoError(false);
+      } else {
+        onPlaylistComplete();
+      }
+    }, 1200);
+
+    return () => { clearTimeout(t); };
+  }, [currentVideo]);
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
@@ -399,6 +401,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
                   <p>正在加载视频...</p>
                 </div>
+              </div>
+            )}
+            {/* transient missing-file notice */}
+            {missingNotice && (
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-400 text-black px-4 py-2 rounded shadow">
+                {missingNotice}
               </div>
             )}
             
@@ -441,7 +449,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onTouchStart={showControlsTemporarily}
                 >
                   <div className="text-6xl mb-6">🎵</div>
-                  <h2 className="text-2xl font-bold mb-2">{currentVideo.name}</h2>
+                  <h2 className="text-2xl font-bold mb-2">{currentVideo?.name}</h2>
                   <p className="text-yellow-200 mb-4">音频复习模式</p>
                 </div>
               </div>
