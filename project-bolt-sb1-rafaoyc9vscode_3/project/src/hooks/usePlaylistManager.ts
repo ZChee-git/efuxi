@@ -491,6 +491,9 @@ export const usePlaylistManager = () => {
       ? Math.round((completedVideos / totalVideos) * 100) 
       : 0;
 
+    // 统计待复习视频数量
+    const pendingReviewCount = reviews.length;
+
     // 统计累计复习时长（小时，保留1位小数）
     const playHistory = getVideoPlayHistory();
     // 只统计已存在于 videos 的 videoId
@@ -522,6 +525,7 @@ export const usePlaylistManager = () => {
       activeCollections: collections.filter(c => c.isActive).length,
       canAddExtra,
       totalReviewHours,
+      pendingReviewCount,
     };
   };
 

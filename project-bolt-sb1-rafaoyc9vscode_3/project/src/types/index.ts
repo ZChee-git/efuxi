@@ -57,6 +57,7 @@ export interface LearningStats {
   totalReviewHours: number; // 新增：累计复习时长（小时）
   todayAudioReviewCount?: number;
   todayVideoReviewCount?: number;
+  pendingReviewCount?: number; // 新增：待复习视频数量
 }
 
 export interface PlaylistPreview {
