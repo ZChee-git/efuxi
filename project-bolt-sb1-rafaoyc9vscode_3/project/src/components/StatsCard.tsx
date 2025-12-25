@@ -38,7 +38,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats }) => {
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm">今日新学</p>
+              <p className="text-white/80 text-sm">待开始</p>
               <p className="text-2xl font-bold">{stats.todayNewCount}</p>
             </div>
             <Calendar className="text-white/60" size={24} />
@@ -68,8 +68,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats }) => {
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm">完成率</p>
-              <p className="text-2xl font-bold">{stats.overallProgress}%</p>
+              <p className="text-white/80 text-sm">完成数</p>
+              <p className="text-2xl font-bold">{stats.completedVideos}</p>
             </div>
             <TrendingUp className="text-white/60" size={24} />
           </div>
