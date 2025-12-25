@@ -464,8 +464,6 @@ function App() {
           </button>
         </div>
 
-        {/* Statistics */}
-        <StatsCard stats={stats} />
 
         {/* Main Control Panel */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -473,7 +471,6 @@ function App() {
             <Play className="mr-3 text-green-600" size={28} />
             学习控制
           </h2>
-          
           <div className="flex items-center justify-center">
             <button
               onClick={handlePlaySequence}
@@ -484,9 +481,6 @@ function App() {
               播放
             </button>
           </div>
-
-          {/* 继续上次播放按钮已删除 */}
-
           {/* 播放历史 */}
           <div className="mt-4 text-center">
             <button
@@ -498,6 +492,9 @@ function App() {
             </button>
           </div>
         </div>
+
+        {/* Statistics */}
+        <StatsCard stats={stats} />
 
 
         {/* Collection Manager */}
