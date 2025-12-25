@@ -54,7 +54,7 @@ export interface LearningStats {
   overallProgress: number;
   activeCollections: number;
   canAddExtra: boolean;
-  // 新增：区分音频/视频复习计数（可选）
+  totalReviewHours: number; // 新增：累计复习时长（小时）
   todayAudioReviewCount?: number;
   todayVideoReviewCount?: number;
 }

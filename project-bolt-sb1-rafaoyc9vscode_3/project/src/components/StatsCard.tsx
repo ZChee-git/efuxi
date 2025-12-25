@@ -28,8 +28,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats }) => {
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm">已完成</p>
-              <p className="text-2xl font-bold">{stats.completedVideos}</p>
+              <p className="text-white/80 text-sm">复习总时长</p>
+              <p className="text-2xl font-bold">{stats.totalReviewHours}<span className="text-base ml-1">h</span></p>
             </div>
             <Zap className="text-white/60" size={24} />
           </div>

@@ -10,6 +10,7 @@ import {
   deserializePlaylist,
   fileStorage
 } from './useLocalStorage';
+import { getVideoPlayHistory } from '../utils/authUtils';
 
 export const usePlaylistManager = () => {
   // 使用本地存储
@@ -489,6 +490,15 @@ export const usePlaylistManager = () => {
     const overallProgress = totalVideos > 0 
       ? Math.round((completedVideos / totalVideos) * 100) 
       : 0;
+
+    // 统计累计复习时长（小时，保留1位小数）
+    const playHistory = getVideoPlayHistory();
+    // 只统计已存在于 videos 的 videoId
+    const validIds = new Set(videos.map(v => v.id));
+    const totalSeconds = playHistory
+      .filter(h => validIds.has(h.videoId))
+      .reduce((sum, h) => sum + (h.lastPlayedTime || 0), 0);
+    const totalReviewHours = Math.round((totalSeconds / 3600) * 10) / 10;
     // 检查是否可以加餐（今日任务已完成）
     const canAddExtra = newVideos.length === 0 && activeVideos.some(v => v.status === 'new');
     
@@ -511,6 +521,7 @@ export const usePlaylistManager = () => {
       overallProgress,
       activeCollections: collections.filter(c => c.isActive).length,
       canAddExtra,
+      totalReviewHours,
     };
   };
 
