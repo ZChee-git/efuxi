@@ -458,7 +458,7 @@ function App() {
         <div className="text-center mb-12 relative">
           <div className="flex items-center justify-center mb-4">
             <h1 className="text-4xl font-bold text-gray-800">
-              车后座复习系统
+              后排座复习系统
             </h1>
           </div>
           <p
