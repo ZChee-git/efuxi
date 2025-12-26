@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { isTrialValid, isAuthValid, getAuthInfo } from '../utils/authUtils';
 import AuthCodeModal from './AuthCodeModal';
@@ -62,7 +61,7 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             详细使用说明查看微信公众号 @肆张Pakhoi<br />
             或者小报童专栏文章<br />
             <a
-              href="https://xiaobot.net/post/13c235eb-6a1d-4c95-8192-9739f578f8ef"
+              href="https://xiaobot.net/post/7661f373-a78c-4fdc-a04d-3ce9d2dd8df1"
               target="_blank"
               rel="noopener noreferrer"
               style={{ 
@@ -72,7 +71,7 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 lineHeight: '1.4'
               }}
             >
-              https://xiaobot.net/post/13c235eb-6a1d-4c95-8192-9739f578f8ef
+              https://xiaobot.net/post/7661f373-a78c-4fdc-a04d-3ce9d2dd8df1
             </a>
           </div>
         </div>
