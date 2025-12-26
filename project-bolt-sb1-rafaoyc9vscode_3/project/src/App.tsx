@@ -290,7 +290,21 @@ function App() {
       // 4. 新学和复习都没有，提示全部完成
       setPlayAsAudioForNew(false);
       setChainToReview(false);
-      alert('恭喜！已完成所有新学和复习任务。');
+      // 新增：无复习任务，自动进入新学时低调提示
+      setGlobalNotice('无复习任务，开始新内容播放');
+      setTimeout(() => setGlobalNotice(null), 1800);
+      // 自动尝试新建新学playlist（如果还有新内容）
+      const stats2 = getStats();
+      const newPlaylist2 = createTodayPlaylist('new', stats2.canAddExtra, true);
+      if (newPlaylist2 && newPlaylist2.items && newPlaylist2.items.length > 0) {
+        setPlayAsAudioForNew(true);
+        setChainToReview(true);
+        setCurrentPlaylist(newPlaylist2);
+        setShowPreview(false);
+        setShowPlayer(true);
+      } else {
+        alert('恭喜！已完成所有新学和复习任务。');
+      }
     }
   };
 
