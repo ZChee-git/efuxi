@@ -182,7 +182,8 @@ export const usePlaylistManager = () => {
 
   const addVideos = async (files: File[], collectionId: string) => {
     console.log('usePlaylistManager: addVideos 开始', { filesCount: files.length, collectionId });
-    
+    // 新增：为本批次生成唯一importBatchId
+    const importBatchId = generateUUID();
     try {
       const newVideos: VideoFile[] = await Promise.all(
         files.map(async (file, index) => {
@@ -206,6 +207,7 @@ export const usePlaylistManager = () => {
               status: 'new' as const,
               collectionId,
               episodeNumber: index + 1,
+              importBatchId,
             };
           } catch (error) {
             console.error('usePlaylistManager: 保存文件到 IndexedDB 失败:', file.name, error);
@@ -223,6 +225,7 @@ export const usePlaylistManager = () => {
               status: 'new' as const,
               collectionId,
               episodeNumber: index + 1,
+              importBatchId,
             };
           }
         })
@@ -308,14 +311,36 @@ export const usePlaylistManager = () => {
   const getTodayNewVideos = (isExtraSession: boolean = false): PlaylistItem[] => {
     const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
     const activeVideos = videos.filter(v => activeCollectionIds.includes(v.collectionId));
-    
+    let allNewVideos: VideoFile[] = activeVideos.filter(v => v.status === 'new');
+    // 判断是否同一批次
     let newVideos: VideoFile[] = [];
     if (isExtraSession) {
-      newVideos = activeVideos.filter(v => v.status === 'new').slice(0, MAX_NEW_PER_DAY + 2);
+      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY + 2);
     } else {
-      newVideos = activeVideos.filter(v => v.status === 'new').slice(0, MAX_NEW_PER_DAY);
+      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY);
     }
-
+    // 检查是否同一批次
+    const batchIdSet = new Set(newVideos.map(v => v.importBatchId).filter(Boolean));
+    if (batchIdSet.size === 1 && newVideos.length > 0 && newVideos[0].importBatchId) {
+      // 同一批次，按SxxEyy排序
+      const extractSeasonEpisode = (filename: string) => {
+        const match = filename.match(/S(\d{1,2})E(\d{1,2})/i);
+        if (match) {
+          return { season: parseInt(match[1], 10), episode: parseInt(match[2], 10) };
+        }
+        return null;
+      };
+      newVideos = [...newVideos].sort((a, b) => {
+        const aInfo = extractSeasonEpisode(a.name);
+        const bInfo = extractSeasonEpisode(b.name);
+        if (aInfo && bInfo) {
+          return aInfo.season - bInfo.season || aInfo.episode - bInfo.episode;
+        }
+        if (aInfo) return -1;
+        if (bInfo) return 1;
+        return 0;
+      });
+    }
     return newVideos.map(video => ({
       videoId: video.id,
       reviewType: 'new',

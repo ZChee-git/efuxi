@@ -15,6 +15,7 @@ export interface VideoFile {
   fileSize?: number; // 文件大小(字节)
   mimeType?: string; // MIME类型
   mediaType?: 'video' | 'audio'; // 新增：媒体类型
+  importBatchId?: string; // 新增：导入批次ID
 }
 
 export interface Collection {
