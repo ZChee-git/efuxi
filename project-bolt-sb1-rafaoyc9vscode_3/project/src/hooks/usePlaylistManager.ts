@@ -310,19 +310,11 @@ export const usePlaylistManager = () => {
   // 获取今日新学列表
   const getTodayNewVideos = (isExtraSession: boolean = false): PlaylistItem[] => {
     const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
-    const activeVideos = videos.filter(v => activeCollectionIds.includes(v.collectionId));
-    let allNewVideos: VideoFile[] = activeVideos.filter(v => v.status === 'new');
-    // 判断是否同一批次
-    let newVideos: VideoFile[] = [];
-    if (isExtraSession) {
-      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY + 2);
-    } else {
-      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY);
-    }
-    // 检查是否同一批次
-    const batchIdSet = new Set(newVideos.map(v => v.importBatchId).filter(Boolean));
-    if (batchIdSet.size === 1 && newVideos.length > 0 && newVideos[0].importBatchId) {
-      // 同一批次，按SxxEyy排序
+    // 每个合辑的待开始新学视频，按文件名顺序
+    const newVideosByCollection: Record<string, VideoFile[]> = {};
+    for (const cid of activeCollectionIds) {
+      const vids = videos.filter(v => v.collectionId === cid && v.status === 'new');
+      // 按SxxEyy排序
       const extractSeasonEpisode = (filename: string) => {
         const match = filename.match(/S(\d{1,2})E(\d{1,2})/i);
         if (match) {
@@ -330,7 +322,7 @@ export const usePlaylistManager = () => {
         }
         return null;
       };
-      newVideos = [...newVideos].sort((a, b) => {
+      vids.sort((a, b) => {
         const aInfo = extractSeasonEpisode(a.name);
         const bInfo = extractSeasonEpisode(b.name);
         if (aInfo && bInfo) {
@@ -340,8 +332,28 @@ export const usePlaylistManager = () => {
         if (bInfo) return 1;
         return 0;
       });
+      newVideosByCollection[cid] = vids;
     }
-    return newVideos.map(video => ({
+    // 均衡分配
+    const maxCount = isExtraSession ? MAX_NEW_PER_DAY + 2 : MAX_NEW_PER_DAY;
+    const result: VideoFile[] = [];
+    let added = 0;
+    let round = 0;
+    while (added < maxCount) {
+      let anyAdded = false;
+      for (const cid of activeCollectionIds) {
+        const vids = newVideosByCollection[cid];
+        if (vids && vids[round]) {
+          result.push(vids[round]);
+          added++;
+          anyAdded = true;
+          if (added >= maxCount) break;
+        }
+      }
+      if (!anyAdded) break; // 所有合辑都没有更多新学
+      round++;
+    }
+    return result.map(video => ({
       videoId: video.id,
       reviewType: 'new',
       reviewNumber: 1,
