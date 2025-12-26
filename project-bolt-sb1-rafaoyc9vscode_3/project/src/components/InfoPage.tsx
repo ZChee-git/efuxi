@@ -33,6 +33,22 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+        {/* 车后座图标 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1em' }}>
+          <svg width="64" height="40" viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* 车身 */}
+            <rect x="8" y="18" width="48" height="12" rx="6" fill="#2563eb" />
+            {/* 前排大人 */}
+            <circle cx="20" cy="22" r="4" fill="#555" />
+            {/* 后排孩子（正中） */}
+            <circle cx="32" cy="26" r="3.2" fill="#fbbf24" />
+            {/* 车轮 */}
+            <circle cx="16" cy="34" r="4" fill="#222" />
+            <circle cx="48" cy="34" r="4" fill="#222" />
+            {/* 车窗 */}
+            <rect x="14" y="20" width="36" height="7" rx="3.5" fill="#fff" fillOpacity="0.7" />
+          </svg>
+        </div>
         <div className="mb-4 text-gray-700 space-y-2">
           <div style={{marginBottom: '1.5em', textAlign: 'justify'}}>
             <br />
