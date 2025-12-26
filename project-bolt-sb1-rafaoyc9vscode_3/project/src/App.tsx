@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import InfoPage from './components/InfoPage';
 import AuthCodeModal from './components/AuthCodeModal';
 import { isTrialValid, isAuthValid } from './utils/authUtils';
-import { Brain, Play, History, BookOpen, Loader } from 'lucide-react';
+import { Play, History, BookOpen, Loader } from 'lucide-react';
 import { usePlaylistManager } from './hooks/usePlaylistManager';
 import { VideoUpload } from './components/VideoUpload';
 import { StatsCard } from './components/StatsCard';
@@ -457,9 +457,8 @@ function App() {
         {/* Header */}
         <div className="text-center mb-12 relative">
           <div className="flex items-center justify-center mb-4">
-            <Brain className="text-blue-600 mr-4" size={48} />
             <h1 className="text-4xl font-bold text-gray-800">
-              智能复习系统
+              车后座复习系统
             </h1>
           </div>
           <p
