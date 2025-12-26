@@ -33,7 +33,7 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
-        {/* 车后座图标 */}
+        {/* 车后座图标预览 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1em' }}>
           <svg width="64" height="40" viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* 车身 */}
