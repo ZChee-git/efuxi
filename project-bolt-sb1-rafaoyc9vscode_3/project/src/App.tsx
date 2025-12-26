@@ -119,7 +119,7 @@ function App() {
         p.playlistType === 'review' &&
         p.lastPlayedIndex < p.items.length
       );
-  const todayReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.type === 'review')) : [];
+  const todayReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.reviewType === 'review')) : [];
       const allReviewItems = [
         ...unfinished.flatMap(p => p.items.slice(p.lastPlayedIndex)),
         ...todayReviews
@@ -243,55 +243,55 @@ function App() {
     }
   };
 
-  // 单一“播放”按钮的处理：先触发新学习并以音频模式播放，完成后尝试自动衔接复习
+  // 单一“播放”按钮的处理：每次优先新学4集，全部新学完成后自动进入复习，复习完成后再次点击才新学
   const handlePlaySequence = () => {
-    const stats = getStats();
-
-    // 每次点击 Play 按钮时，强制重新获取最新的新视频（包括新添加的）
-    // 使用 forceNew=true 参数，忽略已完成的 playlist 缓存，确保新添加的视频也能播放
-    const playlist = createTodayPlaylist('new', stats.canAddExtra, true);
-
-    if (!playlist || !playlist.items || playlist.items.length === 0) {
-      // 如果没有新学习项，无声地切换到复习（不显示 alert 打扰用户）
-      console.log('handlePlaySequence: 无新学习任务，自动切换到复习');
-      setPlayAsAudioForNew(false);
-      setChainToReview(false);
-
-      // 尝试获取或创建复习列表并直接播放
-      // 优先复用未完成的复习 playlist，避免重复生成
-      let reviewPlaylist = playlists.find(p =>
-        !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length
-      );
-
-      // 如果没有未完成的复习 playlist，强制创建新的
-      if (!reviewPlaylist) {
-        reviewPlaylist = createTodayPlaylist('review', false);
-        console.log('handlePlaySequence: 创建新的复习列表', {
-          itemCount: reviewPlaylist?.items?.length || 0,
-          playlistId: reviewPlaylist?.id,
-        });
-      }
-
-      if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
-        console.log('handlePlaySequence: 开始复习，项数=' + reviewPlaylist.items.length);
-        setCurrentPlaylist(reviewPlaylist);
-        setShowPreview(false);
-        setShowPlayer(true);
-      } else {
-        console.warn('handlePlaySequence: 既无新学习也无复习任务');
-        alert('恭喜！已完成所有复习任务。');
-      }
-
+    // 1. 检查是否有未完成的新学playlist（优先新学）
+    let newPlaylist = playlists.find(p =>
+      !p.isCompleted &&
+      p.playlistType === 'new' &&
+      p.lastPlayedIndex < p.items.length
+    );
+    if (newPlaylist && newPlaylist.items && newPlaylist.items.length > 0) {
+      // 继续未完成的新学
+      setPlayAsAudioForNew(true);
+      setChainToReview(true);
+      setCurrentPlaylist(newPlaylist);
+      setShowPreview(false);
+      setShowPlayer(true);
       return;
     }
 
-    // 设置为音频模式播放并在完成后链式触发复习
-    console.log('handlePlaySequence: 开始新学习，项数=' + playlist.items.length);
-    setPlayAsAudioForNew(true);
-    setChainToReview(true);
-    setCurrentPlaylist(playlist);
-    setShowPreview(false);
-    setShowPlayer(true);
+    // 2. 没有未完成新学，则新建新学playlist（每次只取4个新动画）
+    const stats = getStats();
+    const playlist = createTodayPlaylist('new', stats.canAddExtra, true);
+    if (playlist && playlist.items && playlist.items.length > 0) {
+      setPlayAsAudioForNew(true);
+      setChainToReview(true);
+      setCurrentPlaylist(playlist);
+      setShowPreview(false);
+      setShowPlayer(true);
+      return;
+    }
+
+    // 3. 没有新学任务，自动进入复习（优先未完成复习playlist）
+    let reviewPlaylist = playlists.find(p =>
+      !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length
+    );
+    if (!reviewPlaylist) {
+      reviewPlaylist = createTodayPlaylist('review', false);
+    }
+    if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
+      setPlayAsAudioForNew(false);
+      setChainToReview(false);
+      setCurrentPlaylist(reviewPlaylist);
+      setShowPreview(false);
+      setShowPlayer(true);
+    } else {
+      // 4. 新学和复习都没有，提示全部完成
+      setPlayAsAudioForNew(false);
+      setChainToReview(false);
+      alert('恭喜！已完成所有新学和复习任务。');
+    }
   };
 
 
@@ -384,7 +384,7 @@ function App() {
       );
       if (!unfinishedReview) {
         // 没有未完成的复习任务，尝试生成新复习任务
-  const newReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.type === 'review')) : [];
+  const newReviews = playlists && playlists.length > 0 ? playlists.flatMap(p => p.items.filter(item => item.reviewType === 'review')) : [];
         if (newReviews && newReviews.length > 0) {
           const preview = generateTodayPlaylist(false);
           setCurrentPreview(preview);
