@@ -2,19 +2,35 @@ import React from 'react';
 import { BarChart3, Target, Calendar, Zap, TrendingUp, Folder, Headphones } from 'lucide-react';
 import { LearningStats } from '../types';
 
-interface StatsCardProps {
+type StatsCardProps = {
   stats: LearningStats;
-}
+  onShowDetail?: () => void;
+};
 
-export const StatsCard: React.FC<StatsCardProps> = ({ stats }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ stats, onShowDetail }) => {
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-8">
-      <h2 className="text-2xl font-bold mb-6 flex items-center">
-        <BarChart3 className="mr-3" size={28} />
-        学习统计
+    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-8 relative">
+      <h2 className="text-2xl font-bold mb-6 flex items-center justify-between">
+        <span className="flex items-center">
+          <BarChart3 className="mr-3" size={28} />
+          学习统计
+        </span>
+        {/* 明细按钮 */}
+        <button
+          className="ml-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium shadow transition-all border border-white/30 flex items-center"
+          style={{ lineHeight: 1.2 }}
+          onClick={e => { e.stopPropagation(); onShowDetail && onShowDetail(); }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
+            <rect x="3" y="5" width="14" height="2.5" rx="1.2" fill="currentColor"/>
+            <rect x="3" y="9" width="14" height="2.5" rx="1.2" fill="currentColor"/>
+            <rect x="3" y="13" width="14" height="2.5" rx="1.2" fill="currentColor"/>
+          </svg>
+          明细
+        </button>
       </h2>
       
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+  <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>

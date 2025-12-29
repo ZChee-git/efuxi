@@ -6,6 +6,7 @@ import { Play, History, BookOpen, Loader } from 'lucide-react';
 import { usePlaylistManager } from './hooks/usePlaylistManager';
 import { VideoUpload } from './components/VideoUpload';
 import { StatsCard } from './components/StatsCard';
+import StatsDetailPage from './components/StatsDetailPage';
 import { PlaylistPreview } from './components/PlaylistPreview';
 import { PlaylistHistory } from './components/PlaylistHistory';
 import { VideoLibrary } from './components/VideoLibrary';
@@ -15,6 +16,7 @@ import { CollectionManager } from './components/CollectionManager';
 
 
 function App() {
+  const [showStatsDetail, setShowStatsDetail] = useState(false);
   // ...existing code...
   // 添加视频处理函数，防止未定义报错
   const handleVideoAdd = async (files: File[], collectionId: string) => {
@@ -507,7 +509,10 @@ function App() {
         </div>
 
         {/* Statistics */}
-        <StatsCard stats={stats} />
+  <StatsCard stats={stats} onShowDetail={() => setShowStatsDetail(true)} />
+      {showStatsDetail && (
+        <StatsDetailPage onBack={() => setShowStatsDetail(false)} />
+      )}
 
 
         {/* Collection Manager */}
