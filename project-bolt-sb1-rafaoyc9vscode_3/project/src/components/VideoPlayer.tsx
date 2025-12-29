@@ -133,6 +133,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             return prev - 1;
           });
         }, 1000);
+        // 自动跳转到断点并自动播放
+        try {
+          media.currentTime = savedProgress;
+          const playPromise = media.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {});
+          }
+        } catch (e) { /* ignore */ }
       } else {
         setShowResumePrompt(false);
         setResumeTime(0);
