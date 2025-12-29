@@ -48,6 +48,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [resumeCountdown, setResumeCountdown] = useState(10);
+  const resumeTimerRef = useRef<number | null>(null);
+  // 清理定时器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current!);
+    };
+  }, []);
   const [resumeTime, setResumeTime] = useState(0);
   const [missingNotice, setMissingNotice] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -113,6 +121,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (savedProgress > 10 && savedProgress < (media.duration || 0) - 10) {
         setResumeTime(savedProgress);
         setShowResumePrompt(true);
+        setResumeCountdown(10);
+        if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
+        resumeTimerRef.current = setInterval(() => {
+          setResumeCountdown(prev => {
+            if (prev <= 1) {
+              setShowResumePrompt(false);
+              if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
         setShowResumePrompt(false);
         setResumeTime(0);
@@ -270,6 +290,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const m = getActiveMedia();
     if (m && resumeTime > 0) { m.currentTime = resumeTime; setCurrentTime(resumeTime); }
     setShowResumePrompt(false);
+    if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
     showControlsTemporarily();
   };
 
@@ -278,6 +299,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       clearVideoPlayProgress(currentVideo.id);
     }
     setShowResumePrompt(false);
+    if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
+    const m = getActiveMedia();
+    if (m) { m.currentTime = 0; setCurrentTime(0); }
     showControlsTemporarily();
   };
 
@@ -415,16 +439,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
                 <div className="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
                   <h3 className="text-lg font-semibold mb-4 text-gray-800">断点续播</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-600 mb-4">
                     检测到上次播放进度：{formatTime(resumeTime)}
                   </p>
+                  <p className="text-sm text-gray-400 mb-6">{resumeCountdown} 秒后自动消失，视频已自动续播</p>
                   <div className="flex space-x-4">
-                    <button
-                      onClick={resumePlayback}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-                    >
-                      继续播放
-                    </button>
                     <button
                       onClick={startFromBeginning}
                       className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
@@ -435,6 +454,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </div>
               </div>
             )}
+  // 清理定时器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current!);
+    };
+  }, []);
             
             {/* 音频模式显示 */}
             {audioOnlyMode && (
