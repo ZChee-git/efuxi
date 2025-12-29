@@ -454,13 +454,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </div>
               </div>
             )}
-  // 清理定时器，防止内存泄漏
-  useEffect(() => {
-    return () => {
-      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current!);
-    };
-  }, []);
-            
             {/* 音频模式显示 */}
             {audioOnlyMode && (
               <div
