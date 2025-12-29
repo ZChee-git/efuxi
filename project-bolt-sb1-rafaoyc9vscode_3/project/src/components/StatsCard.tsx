@@ -17,16 +17,16 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats, onShowDetail }) => 
         </span>
         {/* 明细按钮 */}
         <button
-          className="ml-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium shadow transition-all border border-white/30 flex items-center"
+          className="ml-2 px-2 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white shadow transition-all border border-white/30 flex items-center"
           style={{ lineHeight: 1.2 }}
           onClick={e => { e.stopPropagation(); onShowDetail && onShowDetail(); }}
+          title="学习统计明细"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="3" y="5" width="14" height="2.5" rx="1.2" fill="currentColor"/>
             <rect x="3" y="9" width="14" height="2.5" rx="1.2" fill="currentColor"/>
             <rect x="3" y="13" width="14" height="2.5" rx="1.2" fill="currentColor"/>
           </svg>
-          明细
         </button>
       </h2>
       
