@@ -15,6 +15,19 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
   const now = Date.now();
   const days = Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24)));
   const avgHours = Math.round((stats.totalReviewHours / days) * 10) / 10;
+
+  // 计算本周日均学习时长（最近7天播放历史均值）
+  let weekAvgHours = 0;
+  try {
+    const playHistoryRaw = window.localStorage.getItem('videoPlayHistory');
+    if (playHistoryRaw) {
+      const playHistory = JSON.parse(playHistoryRaw);
+      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+      const weekHistory = playHistory.filter((h: any) => h.lastPlayedDate >= sevenDaysAgo);
+      const weekSeconds = weekHistory.reduce((sum: number, h: any) => sum + (h.lastPlayedTime || 0), 0);
+      weekAvgHours = Math.round((weekSeconds / 3600 / 7) * 10) / 10;
+    }
+  } catch {}
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
@@ -46,6 +59,10 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
               <tr>
                 <td className="px-4 py-2">日均学习时长</td>
                 <td className="px-4 py-2">{avgHours} 小时</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">本周日均学习时长</td>
+                <td className="px-4 py-2">{weekAvgHours} 小时</td>
               </tr>
               <tr>
                 <td className="px-4 py-2 align-top">所有合辑及集数</td>
