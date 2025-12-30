@@ -14,7 +14,7 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
   const start = firstUseDate ? Number(firstUseDate) : Date.now();
   const now = Date.now();
   const days = Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24)));
-  const avgHours = Math.round((stats.totalReviewHours / days) * 10) / 10;
+  const avgHours = Math.round((stats.totalReviewHours / days) * 100) / 100;
 
   // 计算本周日均学习时长（最近7天播放历史均值）
   let weekAvgHours = 0;
@@ -25,7 +25,7 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
       const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
       const weekHistory = playHistory.filter((h: any) => h.lastPlayedDate >= sevenDaysAgo);
       const weekSeconds = weekHistory.reduce((sum: number, h: any) => sum + (h.lastPlayedTime || 0), 0);
-      weekAvgHours = Math.round((weekSeconds / 3600 / 7) * 10) / 10;
+  weekAvgHours = Math.round((weekSeconds / 3600 / 7) * 100) / 100;
     }
   } catch {}
   
@@ -54,15 +54,15 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
             <tbody>
               <tr>
                 <td className="px-4 py-2">学习（复习）总时长</td>
-                <td className="px-4 py-2">{stats.totalReviewHours} 小时</td>
+                <td className="px-4 py-2">{(Math.round(stats.totalReviewHours * 100) / 100).toFixed(2)} 小时</td>
               </tr>
               <tr>
                 <td className="px-4 py-2">日均学习时长</td>
-                <td className="px-4 py-2">{avgHours} 小时</td>
+                <td className="px-4 py-2">{avgHours.toFixed(2)} 小时</td>
               </tr>
               <tr>
                 <td className="px-4 py-2">本周日均学习时长</td>
-                <td className="px-4 py-2">{weekAvgHours} 小时</td>
+                <td className="px-4 py-2">{weekAvgHours.toFixed(2)} 小时</td>
               </tr>
               <tr>
                 <td className="px-4 py-2 align-top">所有合辑及集数</td>
