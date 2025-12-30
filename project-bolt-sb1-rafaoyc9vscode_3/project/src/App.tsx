@@ -467,7 +467,7 @@ function App() {
             className="text-xl text-gray-600 max-w-3xl mx-auto"
             style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif" }}
           >
-            日拱一卒
+            车厢里的外语环境
           </p>
           <button
             className="absolute right-0 top-0 flex items-center justify-center bg-blue-500 hover:bg-blue-700 text-white rounded-full shadow transition-colors"
@@ -511,7 +511,7 @@ function App() {
         {/* Statistics */}
   <StatsCard stats={stats} onShowDetail={() => setShowStatsDetail(true)} />
       {showStatsDetail && (
-        <StatsDetailPage onBack={() => setShowStatsDetail(false)} />
+  <StatsDetailPage onBack={() => setShowStatsDetail(false)} stats={stats} collections={collections} />
       )}
 
 
