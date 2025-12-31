@@ -48,7 +48,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [resumeCountdown, setResumeCountdown] = useState(10);
+  const [resumeCountdown, setResumeCountdown] = useState(5);
   const resumeTimerRef = useRef<number | null>(null);
   // 清理定时器，防止内存泄漏
   useEffect(() => {
@@ -121,7 +121,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (savedProgress > 10 && savedProgress < (media.duration || 0) - 10) {
         setResumeTime(savedProgress);
         setShowResumePrompt(true);
-        setResumeCountdown(10);
+  setResumeCountdown(5);
         if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
         resumeTimerRef.current = setInterval(() => {
           setResumeCountdown(prev => {
