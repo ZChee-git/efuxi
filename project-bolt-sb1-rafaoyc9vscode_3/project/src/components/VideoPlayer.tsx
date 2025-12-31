@@ -180,13 +180,26 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       } else { setVideoError(true); }
     };
 
+    // 全局累计播放时长
+  // let lastGlobalTime = 0;
     const handleTimeUpdateLocal = () => {
       if (!media || !currentVideo) return;
       const t = media.currentTime;
       setCurrentTime(t);
       const now = Date.now();
+      // 每5秒保存断点
       if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
         if (t > 0) { saveVideoPlayProgress(currentVideo.id, currentVideo.name, t); lastSaveTimeRef.current = now; }
+      }
+      // 全局累计播放时长（每秒累加）
+      const win: any = window;
+      if (!win.__lastGlobalPlayUpdate) win.__lastGlobalPlayUpdate = now;
+      const delta = Math.floor((now - win.__lastGlobalPlayUpdate) / 1000);
+      if (delta > 0) {
+        let total = parseInt(localStorage.getItem('totalPlaySeconds') || '0', 10);
+        total += delta;
+        localStorage.setItem('totalPlaySeconds', total.toString());
+        win.__lastGlobalPlayUpdate = now;
       }
     };
 
