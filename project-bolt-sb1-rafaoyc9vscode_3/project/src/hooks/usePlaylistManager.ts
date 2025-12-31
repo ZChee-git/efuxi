@@ -404,13 +404,30 @@ export const usePlaylistManager = () => {
       });
     }
 
-    // 按复习次数排序，优先处理逾期时间长的
-    reviewVideos.sort((a, b) => {
-      if (!a.nextReviewDate || !b.nextReviewDate) return 0;
-      return a.nextReviewDate.getTime() - b.nextReviewDate.getTime();
+    // 复习内容轮流分配：从每个活跃专辑依次取1个，直到全部分配完
+    const groupByCollection: Record<string, VideoFile[]> = {};
+    activeCollectionIds.forEach(cid => {
+      groupByCollection[cid] = reviewVideos.filter(v => v.collectionId === cid);
     });
-
-    return reviewVideos.map(video => ({
+    const result: VideoFile[] = [];
+    let round = 0;
+    let added = 0;
+    const total = reviewVideos.length;
+    while (added < total) {
+      let anyAdded = false;
+      for (const cid of activeCollectionIds) {
+        const group = groupByCollection[cid];
+        if (group && group[round]) {
+          result.push(group[round]);
+          added++;
+          anyAdded = true;
+          if (added >= total) break;
+        }
+      }
+      if (!anyAdded) break;
+      round++;
+    }
+    return result.map(video => ({
       videoId: video.id,
       reviewType: 'review',
       reviewNumber: video.reviewCount + 1,
