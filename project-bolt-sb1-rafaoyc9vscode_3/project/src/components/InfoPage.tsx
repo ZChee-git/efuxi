@@ -36,17 +36,11 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         {/* 车后座图标预览 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1em' }}>
           <svg width="64" height="40" viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* 车身 */}
-            <rect x="8" y="18" width="48" height="12" rx="6" fill="#2563eb" />
-            {/* 前排大人 */}
-            <circle cx="20" cy="22" r="4" fill="#555" />
-            {/* 后排孩子（正中） */}
-            <circle cx="32" cy="26" r="3.2" fill="#fbbf24" />
-            {/* 车轮 */}
-            <circle cx="16" cy="34" r="4" fill="#222" />
-            <circle cx="48" cy="34" r="4" fill="#222" />
-            {/* 车窗 */}
-            <rect x="14" y="20" width="36" height="7" rx="3.5" fill="#fff" fillOpacity="0.7" />
+            {/* 大脑简笔画风格 */}
+            <path d="M20 20c-4-8 8-16 16-8 8-8 20 0 16 8 4 8-8 16-16 8-8 8-20 0-16-8z" stroke="#2563eb" strokeWidth="2.5" fill="#fff"/>
+            <path d="M28 18c0-2 2-4 4-4s4 2 4 4" stroke="#2563eb" strokeWidth="1.5" fill="none"/>
+            <path d="M36 22c0 2-2 4-4 4s-4-2-4-4" stroke="#2563eb" strokeWidth="1.5" fill="none"/>
+            <circle cx="32" cy="20" r="1.5" fill="#2563eb"/>
           </svg>
         </div>
         <div className="mb-4 text-gray-700 space-y-2">
