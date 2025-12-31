@@ -35,12 +35,13 @@ const InfoPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
         {/* 车后座图标预览 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1em' }}>
-          <svg width="64" height="40" viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* 大脑简笔画风格 */}
-            <path d="M20 20c-4-8 8-16 16-8 8-8 20 0 16 8 4 8-8 16-16 8-8 8-20 0-16-8z" stroke="#2563eb" strokeWidth="2.5" fill="#fff"/>
-            <path d="M28 18c0-2 2-4 4-4s4 2 4 4" stroke="#2563eb" strokeWidth="1.5" fill="none"/>
-            <path d="M36 22c0 2-2 4-4 4s-4-2-4-4" stroke="#2563eb" strokeWidth="1.5" fill="none"/>
-            <circle cx="32" cy="20" r="1.5" fill="#2563eb"/>
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* 圆形大脑简笔画 */}
+            <circle cx="24" cy="24" r="22" stroke="#2563eb" strokeWidth="2.5" fill="#fff"/>
+            <path d="M16 28c-2-4 4-8 8-4 4-4 10 0 8 4 2 4-4 8-8 4-4 4-10 0-8-4z" stroke="#2563eb" strokeWidth="2" fill="#fff"/>
+            <path d="M20 22c0-1.5 1.5-3 3-3s3 1.5 3 3" stroke="#2563eb" strokeWidth="1.2" fill="none"/>
+            <path d="M27 26c0 1.5-1.5 3-3 3s-3-1.5-3-3" stroke="#2563eb" strokeWidth="1.2" fill="none"/>
+            <circle cx="24" cy="24" r="1.2" fill="#2563eb"/>
           </svg>
         </div>
         <div className="mb-4 text-gray-700 space-y-2">
