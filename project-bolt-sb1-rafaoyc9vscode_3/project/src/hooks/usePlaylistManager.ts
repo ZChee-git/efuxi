@@ -313,8 +313,26 @@ export const usePlaylistManager = () => {
     const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
     // 每个专辑的new视频分组
     const groupByCollection: Record<string, VideoFile[]> = {};
+    // SxxEyy排序函数
+    const extractSeasonEpisode = (filename: string) => {
+      const match = filename.match(/S(\d{1,2})E(\d{1,2})/i);
+      if (match) {
+        return { season: parseInt(match[1], 10), episode: parseInt(match[2], 10) };
+      }
+      return null;
+    };
     activeCollectionIds.forEach(cid => {
-      groupByCollection[cid] = videos.filter(v => v.collectionId === cid && v.status === 'new');
+      const group = videos.filter(v => v.collectionId === cid && v.status === 'new');
+      groupByCollection[cid] = [...group].sort((a, b) => {
+        const aInfo = extractSeasonEpisode(a.name);
+        const bInfo = extractSeasonEpisode(b.name);
+        if (aInfo && bInfo) {
+          return aInfo.season - bInfo.season || aInfo.episode - bInfo.episode;
+        }
+        if (aInfo) return -1;
+        if (bInfo) return 1;
+        return a.name.localeCompare(b.name);
+      });
     });
     const result: VideoFile[] = [];
     let limit = isExtraSession ? MAX_NEW_PER_DAY + 2 : MAX_NEW_PER_DAY;
