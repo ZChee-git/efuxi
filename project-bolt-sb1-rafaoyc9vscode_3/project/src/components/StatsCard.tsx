@@ -64,7 +64,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats, onShowDetail }) => 
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm">待复习</p>
+              <p className="text-white/80 text-sm">今日待复习</p>
               <p className="text-2xl font-bold">{stats.pendingReviewCount ?? 0}</p>
             </div>
             <Headphones className="text-white/60" size={24} />
