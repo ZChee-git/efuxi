@@ -308,40 +308,33 @@ export const usePlaylistManager = () => {
   };
 
   // 获取今日新学列表
+  // 新学习内容轮流分配：从每个活跃专辑依次取1个，直到达到MAX_NEW_PER_DAY
   const getTodayNewVideos = (isExtraSession: boolean = false): PlaylistItem[] => {
     const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
-    const activeVideos = videos.filter(v => activeCollectionIds.includes(v.collectionId));
-    let allNewVideos: VideoFile[] = activeVideos.filter(v => v.status === 'new');
-    // 判断是否同一批次
-    let newVideos: VideoFile[] = [];
-    if (isExtraSession) {
-      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY + 2);
-    } else {
-      newVideos = allNewVideos.slice(0, MAX_NEW_PER_DAY);
-    }
-    // 检查是否同一批次
-    const batchIdSet = new Set(newVideos.map(v => v.importBatchId).filter(Boolean));
-    if (batchIdSet.size === 1 && newVideos.length > 0 && newVideos[0].importBatchId) {
-      // 同一批次，按SxxEyy排序
-      const extractSeasonEpisode = (filename: string) => {
-        const match = filename.match(/S(\d{1,2})E(\d{1,2})/i);
-        if (match) {
-          return { season: parseInt(match[1], 10), episode: parseInt(match[2], 10) };
+    // 每个专辑的new视频分组
+    const groupByCollection: Record<string, VideoFile[]> = {};
+    activeCollectionIds.forEach(cid => {
+      groupByCollection[cid] = videos.filter(v => v.collectionId === cid && v.status === 'new');
+    });
+    const result: VideoFile[] = [];
+    let limit = isExtraSession ? MAX_NEW_PER_DAY + 2 : MAX_NEW_PER_DAY;
+    let added = 0;
+    let round = 0;
+    while (added < limit) {
+      let anyAdded = false;
+      for (const cid of activeCollectionIds) {
+        const group = groupByCollection[cid];
+        if (group && group[round]) {
+          result.push(group[round]);
+          added++;
+          anyAdded = true;
+          if (added >= limit) break;
         }
-        return null;
-      };
-      newVideos = [...newVideos].sort((a, b) => {
-        const aInfo = extractSeasonEpisode(a.name);
-        const bInfo = extractSeasonEpisode(b.name);
-        if (aInfo && bInfo) {
-          return aInfo.season - bInfo.season || aInfo.episode - bInfo.episode;
-        }
-        if (aInfo) return -1;
-        if (bInfo) return 1;
-        return 0;
-      });
+      }
+      if (!anyAdded) break; // 没有更多可选项
+      round++;
     }
-    return newVideos.map(video => ({
+    return result.map(video => ({
       videoId: video.id,
       reviewType: 'new',
       reviewNumber: 1,
