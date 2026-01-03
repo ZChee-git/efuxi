@@ -52,11 +52,11 @@ export function useVideoManager() {
     const totalVideos = videos.length;
     const completedVideos = videos.filter(v => v.status === 'completed').length;
     // 全局累计播放时长（小时，保留1位小数）
-    let totalPlaySeconds = 0;
+    let globalTotalPlaySeconds = 0;
     try {
-      totalPlaySeconds = parseInt(localStorage.getItem('totalPlaySeconds') || '0', 10);
+      globalTotalPlaySeconds = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
     } catch {}
-    const totalReviewHours = Math.floor((totalPlaySeconds / 360) + 0.05) / 10; // 1位小数
+    const totalReviewHours = Math.floor((globalTotalPlaySeconds / 360) + 0.05) / 10; // 1位小数
     return {
       totalVideos,
       completedVideos,

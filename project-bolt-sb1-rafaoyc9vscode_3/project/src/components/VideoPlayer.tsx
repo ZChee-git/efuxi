@@ -196,9 +196,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (!win.__lastGlobalPlayUpdate) win.__lastGlobalPlayUpdate = now;
       const delta = Math.floor((now - win.__lastGlobalPlayUpdate) / 1000);
       if (delta > 0) {
-        let total = parseInt(localStorage.getItem('totalPlaySeconds') || '0', 10);
+        let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
         total += delta;
-        localStorage.setItem('totalPlaySeconds', total.toString());
+        localStorage.setItem('globalTotalPlaySeconds', total.toString());
         win.__lastGlobalPlayUpdate = now;
       }
     };
