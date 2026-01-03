@@ -196,10 +196,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     // 播放完成时累加全局播放时长
     const handleEnded = () => {
       if (!media) return;
-      const duration = Math.floor(media.duration || 0);
-      if (duration > 0) {
+      const played = Math.floor(media.currentTime || 0);
+      if (played > 0) {
         let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
-        total += duration;
+        total += played;
         localStorage.setItem('globalTotalPlaySeconds', total.toString());
       }
     };
