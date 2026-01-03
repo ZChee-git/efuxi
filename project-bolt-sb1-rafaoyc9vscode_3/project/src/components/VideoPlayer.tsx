@@ -191,22 +191,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
         if (t > 0) { saveVideoPlayProgress(currentVideo.id, currentVideo.name, t); lastSaveTimeRef.current = now; }
       }
-      // 全局累计播放时长（每秒累加）
-      const win: any = window;
-      if (!win.__lastGlobalPlayUpdate) win.__lastGlobalPlayUpdate = now;
-      const delta = Math.floor((now - win.__lastGlobalPlayUpdate) / 1000);
-      if (delta > 0) {
+    };
+
+    // 播放完成时累加全局播放时长
+    const handleEnded = () => {
+      if (!media) return;
+      const duration = Math.floor(media.duration || 0);
+      if (duration > 0) {
         let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
-        total += delta;
+        total += duration;
         localStorage.setItem('globalTotalPlaySeconds', total.toString());
-        win.__lastGlobalPlayUpdate = now;
       }
     };
 
-    media.addEventListener('loadedmetadata', handleLoadedMetadata);
-    media.addEventListener('canplay', handleCanPlay);
-    media.addEventListener('error', handleError);
-    media.addEventListener('timeupdate', handleTimeUpdateLocal);
+  media.addEventListener('loadedmetadata', handleLoadedMetadata);
+  media.addEventListener('canplay', handleCanPlay);
+  media.addEventListener('error', handleError);
+  media.addEventListener('timeupdate', handleTimeUpdateLocal);
+  media.addEventListener('ended', handleEnded);
 
     const START_WAIT_MS = 30000;
     if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); }
