@@ -16,23 +16,6 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  // 播放界面顶端显示复习进度和原计划复习日期
-  const renderProgressAndDate = () => (
-    <div style={{
-      width: '100%',
-      background: 'rgba(255,255,255,0.85)',
-      color: '#1e293b',
-      fontWeight: 600,
-      fontSize: '1.1rem',
-      padding: '8px 0',
-      textAlign: 'center',
-      borderBottom: '1px solid #e5e7eb',
-      marginBottom: 8
-    }}>
-      {reviewProgressText}
-      {plannedDateText && <span style={{marginLeft: 16, color: '#64748b', fontWeight: 400}}>{plannedDateText}</span>}
-    </div>
-  );
   playlist,
   videos,
   onClose,
