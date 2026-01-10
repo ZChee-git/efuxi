@@ -76,6 +76,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastSaveTimeRef = useRef<number>(0);
+  const lastGlobalPlaySecondsRef = useRef<number>(0); // 新增：累计本次视频已统计的秒数
 
   // 使用 useRef 来避免 autoPlay 状态导致的重新渲染
   const autoPlayRef = useRef(true);
@@ -202,9 +203,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const t = media.currentTime;
       setCurrentTime(t);
       const now = Date.now();
-      // 每5秒保存断点
+      // 每5秒保存断点并累计播放时长
       if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
-        if (t > 0) { saveVideoPlayProgress(currentVideo.id, currentVideo.name, t); lastSaveTimeRef.current = now; }
+        if (t > 0) {
+          saveVideoPlayProgress(currentVideo.id, currentVideo.name, t);
+          lastSaveTimeRef.current = now;
+          // 只累计本次新增的播放时长
+          const delta = Math.floor(t - lastGlobalPlaySecondsRef.current);
+          if (delta > 0) {
+            let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
+            total += delta;
+            localStorage.setItem('globalTotalPlaySeconds', total.toString());
+            lastGlobalPlaySecondsRef.current = Math.floor(t);
+          }
+        }
       }
     };
 
@@ -212,10 +224,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleEnded = () => {
       if (!media) return;
       const played = Math.floor(media.currentTime || 0);
-      if (played > 0) {
+      // 补充统计最后一次 timeupdate 到结束之间的时长
+      if (played > 0 && played > lastGlobalPlaySecondsRef.current) {
         let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
-        total += played;
+        total += played - lastGlobalPlaySecondsRef.current;
         localStorage.setItem('globalTotalPlaySeconds', total.toString());
+        lastGlobalPlaySecondsRef.current = played;
       }
     };
 
