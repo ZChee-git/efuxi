@@ -356,6 +356,7 @@ export const usePlaylistManager = () => {
       videoId: video.id,
       reviewType: 'new',
       reviewNumber: 1,
+      plannedDate: video.firstPlayDate ? video.firstPlayDate.getTime() : undefined,
     }));
   };
 
@@ -451,6 +452,7 @@ export const usePlaylistManager = () => {
       reviewNumber: video.reviewCount + 1,
       daysSinceFirstPlay: video.firstPlayDate ? getDaysSinceFirstPlay(video.firstPlayDate) : 0,
       isRecommendedForVideo: [3,4,5].includes(video.reviewCount), // 15/30/90天建议视频复习
+      plannedDate: video.nextReviewDate ? video.nextReviewDate.getTime() : undefined,
     }));
   };
 
