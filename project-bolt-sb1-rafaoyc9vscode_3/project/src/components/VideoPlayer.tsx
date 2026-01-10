@@ -16,6 +16,23 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  // 播放界面顶端显示复习进度和原计划复习日期
+  const renderProgressAndDate = () => (
+    <div style={{
+      width: '100%',
+      background: 'rgba(255,255,255,0.85)',
+      color: '#1e293b',
+      fontWeight: 600,
+      fontSize: '1.1rem',
+      padding: '8px 0',
+      textAlign: 'center',
+      borderBottom: '1px solid #e5e7eb',
+      marginBottom: 8
+    }}>
+      {reviewProgressText}
+      {plannedDateText && <span style={{marginLeft: 16, color: '#64748b', fontWeight: 400}}>{plannedDateText}</span>}
+    </div>
+  );
   playlist,
   videos,
   onClose,
@@ -442,11 +459,27 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
       <div className="relative w-full h-full">
-        {/* 复习进度和计划日期显示 */}
+        {/* 复习进度和原计划复习日期合并一行显示 */}
         {(reviewProgressText || plannedDateText) && (
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/80 rounded-lg px-4 py-2 text-center text-blue-700 font-semibold shadow-lg z-50">
-            {reviewProgressText && <div>{reviewProgressText}</div>}
-            {plannedDateText && <div>{plannedDateText}</div>}
+          <div style={{
+            position: 'absolute',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(255,255,255,0.92)',
+            borderRadius: 12,
+            padding: '8px 24px',
+            fontWeight: 600,
+            fontSize: '1.1rem',
+            color: '#1e293b',
+            boxShadow: '0 2px 8px rgba(30,41,59,0.08)',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24
+          }}>
+            <span>{reviewProgressText}</span>
+            {plannedDateText && <span style={{color: '#64748b', fontWeight: 400}}>{plannedDateText}</span>}
           </div>
         )}
         {/* Video/Audio Display */}
