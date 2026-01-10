@@ -48,7 +48,7 @@ const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collec
             </thead>
             <tbody>
               <tr>
-                <td className="px-4 py-2">学习（复习）总时长</td>
+                <td className="px-4 py-2">学习总时长</td>
                 <td className="px-4 py-2">{(Math.round(stats.totalReviewHours * 100) / 100).toFixed(2)} 小时</td>
               </tr>
               <tr>
