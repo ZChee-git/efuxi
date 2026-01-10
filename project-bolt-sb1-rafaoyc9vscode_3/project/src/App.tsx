@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import InfoPage from './components/InfoPage';
 import AuthCodeModal from './components/AuthCodeModal';
 import { isTrialValid, isAuthValid } from './utils/authUtils';
 import { Play, History, BookOpen, Loader } from 'lucide-react';
-import { useRef } from 'react';
 import { usePlaylistManager } from './hooks/usePlaylistManager';
 import { VideoUpload } from './components/VideoUpload';
 import { StatsCard } from './components/StatsCard';
@@ -15,8 +15,25 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { InstallPrompt } from './components/InstallPrompt';
 import { CollectionManager } from './components/CollectionManager';
 
+// 自定义完成提示弹窗，必须放在App组件外部
+function CompleteModal({ message, onClose }: { message: string, onClose: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-8 max-w-xs w-full text-center">
+        <div className="text-lg font-bold mb-4">{message}</div>
+        <button className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onClick={onClose}>关闭</button>
+      </div>
+    </div>
+  );
+}
+
 
 function App() {
+  // CompleteModal相关hooks和函数
   const [showStatsDetail, setShowStatsDetail] = useState(false);
   // ...existing code...
   // 添加视频处理函数，防止未定义报错
@@ -519,32 +536,12 @@ function App() {
         {/* Collection Manager */}
         <CollectionManager
           collections={collections}
-  // 自定义完成提示弹窗
-  function CompleteModal({ message, onClose }) {
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }, [onClose]);
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-xs w-full text-center">
-          <div className="text-lg font-bold mb-4">{message}</div>
-          <button className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onClick={onClose}>关闭</button>
-        </div>
-      </div>
-    );
-  }
           videos={videos}
           onCreateCollection={createCollection}
           onToggleCollection={toggleCollection}
           onDeleteCollection={deleteCollection}
           onUpdateCollection={updateCollection}
         />
-    const [showCompleteModal, setShowCompleteModal] = useState(false);
-    const [completeMessage, setCompleteMessage] = useState('');
-    const autoToReviewRef = useRef(false);
 
         {/* Video Upload */}
         <VideoUpload 
@@ -585,22 +582,6 @@ function App() {
               </h3>
               <button
                 onClick={() => setShowPreview(false)}
-    // 完成弹窗关闭逻辑
-    const handleCompleteModalClose = () => {
-      setShowCompleteModal(false);
-      setShowPlayer(false);
-      setCurrentPlaylist(null);
-      // 自动进入复习任务
-      if (autoToReviewRef.current) {
-        setChainToReview(false);
-        setPlayAsAudioForNew(false);
-        const reviewPlaylist = playlists.find(p => !p.isCompleted && p.playlistType === 'review' && p.lastPlayedIndex < p.items.length) || createTodayPlaylist('review', false);
-        if (reviewPlaylist && reviewPlaylist.items && reviewPlaylist.items.length > 0) {
-          setCurrentPlaylist(reviewPlaylist);
-          setShowPlayer(true);
-        }
-      }
-    };
                 className="text-white hover:text-gray-300 text-2xl font-bold"
               >
                 ×
