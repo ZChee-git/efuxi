@@ -35,6 +35,7 @@ export interface PlaylistItem {
   reviewNumber: number;
   daysSinceFirstPlay?: number;
   isRecommendedForVideo?: boolean;
+  plannedDate?: string | number;
 }
 
 export interface DailyPlaylist {

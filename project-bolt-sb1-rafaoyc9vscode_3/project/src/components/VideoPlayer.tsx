@@ -42,6 +42,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const startTimeoutRef = useRef<number | null>(null);
   const currentItem = playlist[currentIndex];
   const currentVideo = videos.find(v => v.id === currentItem?.videoId);
+
+  // 复习进度和计划日期显示
+  let reviewProgressText = '';
+  let plannedDateText = '';
+  if (currentItem) {
+    if (currentItem.reviewType === 'review' && typeof currentItem.reviewNumber === 'number') {
+      reviewProgressText = `第${currentItem.reviewNumber}/5次复习`;
+    } else if (currentItem.reviewType === 'new') {
+      reviewProgressText = '第1/5次复习';
+    }
+    if (currentItem.plannedDate) {
+      const d = new Date(currentItem.plannedDate);
+      plannedDateText = `原计划复习日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  }
   const derivedAudioMode = currentVideo?.mediaType === 'audio';
   const [audioOnlyMode] = useState(isAudioMode || derivedAudioMode);
   const [userInteracted, setUserInteracted] = useState(false);
@@ -333,11 +348,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (currentVideo) {
       clearVideoPlayProgress(currentVideo.id);
     }
-    // 触发父组件刷新统计项（最小侵入式，假设 videos/setVideos 由 props 传递并响应式）
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      // 触发自定义事件，通知父组件刷新（如有需要可用 context/props 方案替换）
-      window.dispatchEvent(new Event('videoStatusChanged'));
-    }
+    
     if (autoPlayRef.current && currentIndex < playlist.length - 1) {
       goToNext();
     } else if (currentIndex >= playlist.length - 1) {
@@ -417,6 +428,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
       <div className="relative w-full h-full">
+        {/* 复习进度和计划日期显示 */}
+        {(reviewProgressText || plannedDateText) && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/80 rounded-lg px-4 py-2 text-center text-blue-700 font-semibold shadow-lg z-50">
+            {reviewProgressText && <div>{reviewProgressText}</div>}
+            {plannedDateText && <div>{plannedDateText}</div>}
+          </div>
+        )}
         {/* Video/Audio Display */}
         {videoError ? (
           <div className="w-full h-full bg-gray-800 flex items-center justify-center">
