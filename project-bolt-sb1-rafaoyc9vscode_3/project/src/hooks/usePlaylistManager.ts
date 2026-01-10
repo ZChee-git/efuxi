@@ -547,11 +547,12 @@ export const usePlaylistManager = () => {
     // 统计待复习视频数量
     const pendingReviewCount = reviews.length;
 
-    // 统计累计复习时长（小时，保留1位小数）
-    // 统计所有历史播放记录，无论视频是否还在库中
-    const playHistory = getVideoPlayHistory();
-    const totalSeconds = playHistory.reduce((sum, h) => sum + (h.lastPlayedTime || 0), 0);
-    const totalReviewHours = Math.round((totalSeconds / 3600) * 10) / 10;
+    // 统计累计复习时长（小时，保留1位小数），采用全局累计播放秒数
+    let globalTotalPlaySeconds = 0;
+    try {
+      globalTotalPlaySeconds = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
+    } catch {}
+    const totalReviewHours = Math.round((globalTotalPlaySeconds / 3600) * 10) / 10;
     // 检查是否可以加餐（今日任务已完成）
     const canAddExtra = newVideos.length === 0 && activeVideos.some(v => v.status === 'new');
     
