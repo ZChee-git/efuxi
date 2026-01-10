@@ -468,6 +468,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* 左上角版本号浮标 */}
+      <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 1000, background: 'rgba(37,99,235,0.92)', color: '#fff', borderRadius: '8px', padding: '2px 12px', fontWeight: 700, fontSize: '1.1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        2.0
+      </div>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12 relative">
