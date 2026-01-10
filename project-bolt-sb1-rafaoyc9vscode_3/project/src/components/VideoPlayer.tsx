@@ -333,7 +333,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (currentVideo) {
       clearVideoPlayProgress(currentVideo.id);
     }
-    
+    // 触发父组件刷新统计项（最小侵入式，假设 videos/setVideos 由 props 传递并响应式）
+    if (typeof window !== 'undefined' && window.dispatchEvent) {
+      // 触发自定义事件，通知父组件刷新（如有需要可用 context/props 方案替换）
+      window.dispatchEvent(new Event('videoStatusChanged'));
+    }
     if (autoPlayRef.current && currentIndex < playlist.length - 1) {
       goToNext();
     } else if (currentIndex >= playlist.length - 1) {

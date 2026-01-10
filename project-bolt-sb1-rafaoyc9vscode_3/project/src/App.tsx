@@ -16,6 +16,19 @@ import { CollectionManager } from './components/CollectionManager';
 
 
 function App() {
+  // 用于强制刷新
+  const [dummyRefresh, setDummyRefresh] = useState(0);
+
+  // 监听 videoStatusChanged 事件，强制刷新 videos 状态，确保统计项刷新
+  useEffect(() => {
+    const handler = () => {
+      setTimeout(() => {
+        setDummyRefresh((v) => v + 1);
+      }, 0);
+    };
+    window.addEventListener('videoStatusChanged', handler);
+    return () => window.removeEventListener('videoStatusChanged', handler);
+  }, []);
   const [showStatsDetail, setShowStatsDetail] = useState(false);
   // ...existing code...
   // 添加视频处理函数，防止未定义报错
