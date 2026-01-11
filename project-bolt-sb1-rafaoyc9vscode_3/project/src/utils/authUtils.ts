@@ -107,10 +107,10 @@ export function clearAuthInfo() {
   localStorage.removeItem(AUTH_KEY);
 }
 
-// 判断是否在试用期内（7天）
+// 判断是否在试用期内（30天）
 export function isTrialValid(): boolean {
   const first = getOrSetFirstUseDate();
-  return Date.now() - first < 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - first < 30 * 24 * 60 * 60 * 1000;
 }
 
 // 判断授权是否有效（一年）
