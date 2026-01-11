@@ -451,18 +451,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             transform: 'translateX(-50%)',
             background: 'rgba(255,255,255,0.92)',
             borderRadius: 12,
-            padding: '8px 24px',
+            padding: '12px 28px',
             fontWeight: 600,
             fontSize: '1.1rem',
             color: '#1e293b',
             boxShadow: '0 2px 8px rgba(30,41,59,0.08)',
             zIndex: 50,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 24
+            minWidth: 220,
+            textAlign: 'center',
+            lineHeight: 1.6
           }}>
-            <span>{reviewProgressText}</span>
-            {plannedDateText && <span style={{color: '#64748b', fontWeight: 400}}>{plannedDateText}</span>}
+            <div>{reviewProgressText}</div>
+            {plannedDateText && <div style={{color: '#64748b', fontWeight: 400, fontSize: '1rem'}}>{plannedDateText}</div>}
           </div>
         )}
         {/* Video/Audio Display */}

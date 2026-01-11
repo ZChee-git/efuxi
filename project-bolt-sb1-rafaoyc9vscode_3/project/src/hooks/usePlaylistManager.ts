@@ -310,7 +310,10 @@ export const usePlaylistManager = () => {
   // 获取今日新学列表
   // 新学习内容轮流分配：从每个活跃专辑依次取1个，直到达到MAX_NEW_PER_DAY
   const getTodayNewVideos = (isExtraSession: boolean = false): PlaylistItem[] => {
-    const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
+  const activeCollectionIds = collections.filter(c => c.isActive).map(c => c.id);
+  // 日志：输出所有合辑及其isActive状态
+  console.log('[getTodayNewVideos] 所有合辑:', collections.map(c => ({ id: c.id, name: c.name, isActive: c.isActive })));
+  console.log('[getTodayNewVideos] 参与新学习任务选取的活跃合辑ID:', activeCollectionIds);
     // 每个专辑的new视频分组
     const groupByCollection: Record<string, VideoFile[]> = {};
     // SxxEyy排序函数
