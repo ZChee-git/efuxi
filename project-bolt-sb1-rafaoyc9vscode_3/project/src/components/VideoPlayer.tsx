@@ -45,16 +45,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // 复习进度和计划日期显示
   let reviewProgressText = '';
-  let plannedDateText = '';
+  let firstPlayDateText = '';
   if (currentItem) {
     if (currentItem.reviewType === 'review' && typeof currentItem.reviewNumber === 'number') {
       reviewProgressText = `第${currentItem.reviewNumber}/5次复习`;
     } else if (currentItem.reviewType === 'new') {
       reviewProgressText = '第1/5次复习';
     }
-    if (currentItem.plannedDate) {
-      const d = new Date(currentItem.plannedDate);
-      plannedDateText = `原计划复习日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (currentVideo && currentVideo.firstPlayDate) {
+      const d = new Date(currentVideo.firstPlayDate);
+      firstPlayDateText = `首播日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
   }
   const derivedAudioMode = currentVideo?.mediaType === 'audio';
@@ -443,7 +443,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
       <div className="relative w-full h-full">
         {/* 复习进度和原计划复习日期合并一行显示 */}
-        {(reviewProgressText || plannedDateText) && (
+        {(reviewProgressText || firstPlayDateText) && (
           <div style={{
             position: 'absolute',
             top: 16,
@@ -462,7 +462,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             lineHeight: 1.6
           }}>
             <div>{reviewProgressText}</div>
-            {plannedDateText && <div style={{color: '#64748b', fontWeight: 400, fontSize: '1rem'}}>{plannedDateText}</div>}
+            {firstPlayDateText && <div style={{color: '#64748b', fontWeight: 400, fontSize: '1rem'}}>{firstPlayDateText}</div>}
           </div>
         )}
         {/* Video/Audio Display */}
