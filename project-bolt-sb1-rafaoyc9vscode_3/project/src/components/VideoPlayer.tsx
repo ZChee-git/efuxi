@@ -544,7 +544,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onTouchStart={showControlsTemporarily}
                 >
                   <div className="text-6xl mb-6">🎵</div>
-                  <h2 className="text-2xl font-bold mb-2">{currentVideo?.name}</h2>
+                  <h2 className="text-2xl font-bold mb-2" style={{
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    position: 'relative',
+                    width: '100%',
+                    display: 'block',
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      minWidth: '100%',
+                      animation: 'marquee 8s linear infinite',
+                    }}>{currentVideo?.name}</span>
+                  </h2>
                   <p className="text-yellow-200 mb-4">音频复习模式</p>
                 </div>
               </div>
