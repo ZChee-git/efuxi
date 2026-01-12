@@ -222,7 +222,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     // 播放完成时累加全局播放时长
     const handleEnded = () => {
-      if (!media) return;
+      if (!media || !currentVideo) return;
       const played = Math.floor(media.currentTime || 0);
       // 补充统计最后一次 timeupdate 到结束之间的时长
       if (played > 0 && played > lastGlobalPlaySecondsRef.current) {
@@ -231,6 +231,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         localStorage.setItem('globalTotalPlaySeconds', total.toString());
         lastGlobalPlaySecondsRef.current = played;
       }
+      // 修复：播放结束时补充保存完整播放进度到 videoPlayHistory
+      saveVideoPlayProgress(currentVideo.id, currentVideo.name, played);
     };
 
   media.addEventListener('loadedmetadata', handleLoadedMetadata);
