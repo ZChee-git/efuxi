@@ -1,3 +1,35 @@
+// 今日学习时长相关
+const TODAY_PLAY_SECONDS_KEY = 'todayTotalPlaySeconds';
+const TODAY_PLAY_DATE_KEY = 'todayPlayDate';
+
+// 获取今日学习时长（秒）
+export function getTodayPlaySeconds(): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const storedDate = localStorage.getItem(TODAY_PLAY_DATE_KEY);
+  if (!storedDate || parseInt(storedDate, 10) !== today.getTime()) {
+    // 新的一天，重置
+    localStorage.setItem(TODAY_PLAY_DATE_KEY, today.getTime().toString());
+    localStorage.setItem(TODAY_PLAY_SECONDS_KEY, '0');
+    return 0;
+  }
+  return parseInt(localStorage.getItem(TODAY_PLAY_SECONDS_KEY) || '0', 10);
+}
+
+// 累加今日学习时长（秒）
+export function addTodayPlaySeconds(seconds: number) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const storedDate = localStorage.getItem(TODAY_PLAY_DATE_KEY);
+  if (!storedDate || parseInt(storedDate, 10) !== today.getTime()) {
+    // 新的一天，重置
+    localStorage.setItem(TODAY_PLAY_DATE_KEY, today.getTime().toString());
+    localStorage.setItem(TODAY_PLAY_SECONDS_KEY, '0');
+  }
+  let current = parseInt(localStorage.getItem(TODAY_PLAY_SECONDS_KEY) || '0', 10);
+  current += seconds;
+  localStorage.setItem(TODAY_PLAY_SECONDS_KEY, current.toString());
+}
 // 授权相关工具函数
 // 记录localStorage键名
 const FIRST_USE_KEY = 'firstUseDate';

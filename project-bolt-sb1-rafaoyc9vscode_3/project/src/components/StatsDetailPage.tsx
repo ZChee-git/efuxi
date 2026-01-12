@@ -1,4 +1,5 @@
 import React from 'react';
+import { getTodayPlaySeconds } from '../utils/authUtils';
 
 import { LearningStats, Collection } from '../types';
 
@@ -9,20 +10,8 @@ interface StatsDetailPageProps {
 }
 
 const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collections }) => {
-  // 计算今日学习时长（小时）
-  const now = Date.now();
-  let todayHours = 0;
-  try {
-    const playHistoryRaw = window.localStorage.getItem('videoPlayHistory');
-    if (playHistoryRaw) {
-      const playHistory = JSON.parse(playHistoryRaw);
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayHistory = playHistory.filter((h: any) => h.lastPlayedDate >= todayStart.getTime());
-      const todaySeconds = todayHistory.reduce((sum: number, h: any) => sum + (h.lastPlayedTime || 0), 0);
-      todayHours = Math.round((todaySeconds / 3600) * 100) / 100;
-    }
-  } catch {}
+  // 计算今日学习时长（小时），只增不减
+  const todayHours = Math.round((getTodayPlaySeconds() / 3600) * 100) / 100;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipForward, SkipBack, X, AlertCircle } from 'lucide-react';
 import type { PlaylistItem, VideoFile } from '../types';
-import { getVideoPlayProgress, saveVideoPlayProgress, clearVideoPlayProgress } from '../utils/authUtils';
+import { getVideoPlayProgress, saveVideoPlayProgress, clearVideoPlayProgress, addTodayPlaySeconds } from '../utils/authUtils';
 
 interface VideoPlayerProps {
   playlist: PlaylistItem[];
@@ -215,6 +215,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             total += delta;
             localStorage.setItem('globalTotalPlaySeconds', total.toString());
             lastGlobalPlaySecondsRef.current = Math.floor(t);
+            // 累加到今日学习时长
+            addTodayPlaySeconds(delta);
           }
         }
       }
@@ -233,6 +235,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
       // 修复：播放结束时补充保存完整播放进度到 videoPlayHistory
       saveVideoPlayProgress(currentVideo.id, currentVideo.name, played);
+      // 补充：播放结束时累加最后一次播放时长到今日学习时长
+      const delta = played - lastGlobalPlaySecondsRef.current;
+      if (delta > 0) {
+        addTodayPlaySeconds(delta);
+      }
     };
 
   media.addEventListener('loadedmetadata', handleLoadedMetadata);
