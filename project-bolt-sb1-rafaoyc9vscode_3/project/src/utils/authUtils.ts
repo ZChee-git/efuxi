@@ -1,3 +1,24 @@
+// 今日学习时长快照差值法
+const YESTERDAY_TOTAL_REVIEW_SECONDS_KEY = 'yesterdayTotalReviewSeconds';
+const YESTERDAY_DATE_KEY = 'yesterdayDate';
+
+// 获取今日学习时长（基于总时长快照差值，单位：秒）
+export function getTodayReviewSecondsBySnapshot(): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.getTime().toString();
+  const lastDate = localStorage.getItem(YESTERDAY_DATE_KEY);
+  let yesterdaySeconds = parseInt(localStorage.getItem(YESTERDAY_TOTAL_REVIEW_SECONDS_KEY) || '0', 10);
+  const globalTotal = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
+  if (lastDate !== todayStr) {
+    // 新的一天，保存昨日快照
+    localStorage.setItem(YESTERDAY_DATE_KEY, todayStr);
+    localStorage.setItem(YESTERDAY_TOTAL_REVIEW_SECONDS_KEY, globalTotal.toString());
+    yesterdaySeconds = globalTotal;
+  }
+  const diff = globalTotal - yesterdaySeconds;
+  return diff > 0 ? diff : 0;
+}
 // 今日学习时长相关
 const TODAY_PLAY_SECONDS_KEY = 'todayTotalPlaySeconds';
 const TODAY_PLAY_DATE_KEY = 'todayPlayDate';

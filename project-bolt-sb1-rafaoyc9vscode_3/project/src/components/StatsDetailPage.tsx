@@ -1,5 +1,5 @@
 import React from 'react';
-import { getTodayPlaySeconds } from '../utils/authUtils';
+import { getTodayReviewSecondsBySnapshot } from '../utils/authUtils';
 
 import { LearningStats, Collection } from '../types';
 
@@ -10,8 +10,8 @@ interface StatsDetailPageProps {
 }
 
 const StatsDetailPage: React.FC<StatsDetailPageProps> = ({ onBack, stats, collections }) => {
-  // 计算今日学习时长（小时），只增不减
-  const todayHours = Math.round((getTodayPlaySeconds() / 3600) * 100) / 100;
+  // 计算今日学习时长（小时），采用快照差值法
+  const todayHours = Math.round((getTodayReviewSecondsBySnapshot() / 3600) * 100) / 100;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
