@@ -1,3 +1,11 @@
+  // 获取当天所有应复习内容的合并列表（新学+复习，新学优先，供连续播放用）
+  const getTodayMergedReviewList = (): PlaylistItem[] => {
+    // 新学内容（如有）优先于复习内容
+    const newList = getTodayNewVideos();
+    const reviewList = getTodayReviews();
+    return [...newList, ...reviewList];
+  };
+
 import { useState, useEffect } from 'react';
 import { VideoFile, DailyPlaylist, PlaylistItem, LearningStats, PlaylistPreview, Collection } from '../types';
 import { 
@@ -649,7 +657,8 @@ export const usePlaylistManager = () => {
     getStats,
     deleteVideo,
     getVideoById,
-    getTodayNewVideos,
-    getTodayReviews,
+  getTodayNewVideos,
+  getTodayReviews,
+  getTodayMergedReviewList,
   };
 };
