@@ -55,6 +55,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (currentVideo && currentVideo.firstPlayDate) {
       const d = new Date(currentVideo.firstPlayDate);
       firstPlayDateText = `首播日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    } else if (currentItem && currentItem.reviewType === 'new') {
+      // 第1/5次复习且没有首播日期时，UI层兜底显示当天日期
+      const d = new Date();
+      firstPlayDateText = `首播日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
   }
   const derivedAudioMode = currentVideo?.mediaType === 'audio';
