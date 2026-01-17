@@ -618,7 +618,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </div>
             
             {/* Control Buttons - 3倍大小 */}
-            <div className="flex items-center justify-center space-x-8">
+            <div className="flex items-center justify-center space-x-8 controls-bar">
               <button
                 onClick={goToPrevious}
                 disabled={currentIndex === 0}
@@ -655,6 +655,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </div>
       
       <style>{`
+        .controls-bar {
+          padding-left: max(16px, env(safe-area-inset-left));
+          padding-right: max(16px, env(safe-area-inset-right));
+          padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+          box-sizing: border-box;
+        }
         .slider::-webkit-slider-thumb {
           appearance: none;
           height: 20px;
