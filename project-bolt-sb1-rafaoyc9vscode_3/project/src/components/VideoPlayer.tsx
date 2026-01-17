@@ -1,16 +1,3 @@
-  // 跑马灯自动判断内容溢出
-  useEffect(() => {
-    const span = document.getElementById('filename-marquee-span');
-    const container = span?.parentElement;
-    if (span && container) {
-      // 只有内容宽度大于容器宽度时才加动画
-      if (span.scrollWidth > container.offsetWidth) {
-        span.style.animation = 'marquee 8s linear infinite';
-      } else {
-        span.style.animation = '';
-      }
-    }
-  }, [currentVideo?.name]);
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipForward, SkipBack, X, AlertCircle } from 'lucide-react';
 import type { PlaylistItem, VideoFile } from '../types';
@@ -67,10 +54,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
     if (currentVideo && currentVideo.firstPlayDate) {
       const d = new Date(currentVideo.firstPlayDate);
-      firstPlayDateText = `首播日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    } else if (currentItem && currentItem.reviewType === 'new') {
-      // 第1/5次复习且没有首播日期时，UI层兜底显示当天日期
-      const d = new Date();
       firstPlayDateText = `首播日期 ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
   }
@@ -568,26 +551,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onTouchStart={showControlsTemporarily}
                 >
                   <div className="text-6xl mb-6">🎵</div>
-                  <h2
-                    className="text-2xl font-bold mb-2 filename-marquee-container"
-                    style={{
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                      position: 'relative',
-                      width: '100%',
-                      display: 'block',
-                    }}
-                  >
-                    <span
-                      className="filename-marquee"
-                      id="filename-marquee-span"
-                      style={{
-                        display: 'inline-block',
-                        minWidth: '100%',
-                        // 动画由JS动态添加
-                      }}
-                    >{currentVideo?.name}</span>
+                  <h2 className="text-2xl font-bold mb-2" style={{
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    position: 'relative',
+                    width: '100%',
+                    display: 'block',
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      minWidth: '100%',
+                      animation: 'marquee 8s linear infinite',
+                    }}>{currentVideo?.name}</span>
                   </h2>
                   <p className="text-yellow-200 mb-4">音频复习模式</p>
                 </div>
