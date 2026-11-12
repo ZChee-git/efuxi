@@ -77,6 +77,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastSaveTimeRef = useRef<number>(0);
   const lastGlobalPlaySecondsRef = useRef<number>(0); // 新增：累计本次视频已统计的秒数
+  // 锁屏续播修复：用 timeupdate 预判结束，避免依赖锁屏下不可靠的 ended / setTimeout
+  const advancingRef = useRef(false); // 防止同一集被重复切走
+  const mediaSessionInitRef = useRef(false); // MediaSession 只初始化一次
 
   // 使用 useRef 来避免 autoPlay 状态导致的重新渲染
   const autoPlayRef = useRef(true);
@@ -167,20 +170,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsLoading(false);
       setVideoError(false);
       if (autoPlayRef.current && currentIndex >= initialIndex && userInteracted) {
-        setTimeout(() => {
-          if (!videoError && media.readyState >= 2) {
-            const playPromise = media.play();
-            if (playPromise !== undefined) {
-              playPromise.then(() => {
-                console.log('Auto-play successful');
-                if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
-              }).catch(error => {
-                console.log('Auto-play failed, user interaction required:', error);
-                if (!isIOS) setIsLoading(false);
-              });
-            }
+        // 锁屏续播修复：canplay 里同步直接 play()，不再用 setTimeout（锁屏下定时器会被冻结）
+        if (media.readyState >= 2) {
+          const playPromise = media.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log('Auto-play successful');
+              if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); startTimeoutRef.current = null; }
+            }).catch(error => {
+              console.log('Auto-play failed, user interaction required:', error);
+              if (!isIOS) setIsLoading(false);
+            });
           }
-        }, isIOS ? 100 : 500);
+        }
       } else {
         setIsLoading(false);
       }
@@ -202,6 +204,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (!media || !currentVideo) return;
       const t = media.currentTime;
       setCurrentTime(t);
+
+      // 锁屏续播修复：用 timeupdate 预判「快播完」，提前切下一集。
+      // iOS 锁屏下 ended 可能不派发、setTimeout 冻结，但 timeupdate 只要在播就持续触发，
+      // 因此在这里提前接下一集，能让音频从头到尾不断链，无需向系统申请全新的无手势 play()。
+      const dur = media.duration;
+      if (
+        !advancingRef.current &&
+        dur &&
+        dur > 0 &&
+        t >= dur - 0.5 &&
+        currentIndex < playlist.length - 1
+      ) {
+        advancingRef.current = true;
+        // 同步结束统计与清理，再切换
+        const played = Math.floor(dur);
+        if (played > 0 && played > lastGlobalPlaySecondsRef.current) {
+          let total = parseInt(localStorage.getItem('globalTotalPlaySeconds') || '0', 10);
+          total += played - lastGlobalPlaySecondsRef.current;
+          localStorage.setItem('globalTotalPlaySeconds', total.toString());
+          lastGlobalPlaySecondsRef.current = played;
+        }
+        saveVideoPlayProgress(currentVideo.id, currentVideo.name, played);
+        clearVideoPlayProgress(currentVideo.id);
+        goToNext();
+        return;
+      }
+
       const now = Date.now();
       // 每5秒保存断点并累计播放时长
       if (!lastSaveTimeRef.current || now - lastSaveTimeRef.current >= 5000) {
@@ -225,6 +254,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     // 播放完成时累加全局播放时长
     const handleEnded = () => {
       if (!media || !currentVideo) return;
+      // 锁屏续播修复：若已由 timeupdate 预判推进，则不重复统计
+      if (advancingRef.current) return;
       const played = Math.floor(media.currentTime || 0);
       // 补充统计最后一次 timeupdate 到结束之间的时长
       if (played > 0 && played > lastGlobalPlaySecondsRef.current) {
@@ -242,11 +273,25 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
     };
 
-  media.addEventListener('loadedmetadata', handleLoadedMetadata);
+    media.addEventListener('loadedmetadata', handleLoadedMetadata);
   media.addEventListener('canplay', handleCanPlay);
   media.addEventListener('error', handleError);
   media.addEventListener('timeupdate', handleTimeUpdateLocal);
   media.addEventListener('ended', handleEnded);
+
+    // 锁屏续播修复：每次切集后复位「推进中」标记，让下一集又能正常预判结束
+    advancingRef.current = false;
+    // 锁屏续播修复：更新 MediaSession metadata，让锁屏界面显示当前条目与封面
+    try {
+      const ms = (navigator as any).mediaSession;
+      if (ms && currentVideo) {
+        ms.metadata = new (window as any).MediaMetadata({
+          title: currentVideo.name,
+          artist: '后排座复习系统',
+          album: reviewProgressText || '复习',
+        });
+      }
+    } catch (e) { /* ignore */ }
 
     const START_WAIT_MS = 30000;
     if (startTimeoutRef.current) { clearTimeout(startTimeoutRef.current); }
@@ -341,6 +386,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
+  // 锁屏续播修复：MediaSession 保活 —— 挂上系统级播控与 metadata，让媒体会话在锁屏后不散
+  useEffect(() => {
+    if (mediaSessionInitRef.current || !('mediaSession' in navigator)) return;
+    mediaSessionInitRef.current = true;
+    try {
+      const ms = (navigator as any).mediaSession;
+      if (!ms) return;
+      ms.setActionHandler('play', () => {
+        const m = getActiveMedia();
+        if (m) { const p = m.play(); if (p !== undefined) p.catch(() => {}); }
+      });
+      ms.setActionHandler('pause', () => {
+        const m = getActiveMedia();
+        if (m) m.pause();
+      });
+      ms.setActionHandler('nexttrack', () => goToNext());
+      ms.setActionHandler('previoustrack', () => goToPrevious());
+      ms.setActionHandler('seekto', (details: any) => {
+        const m = getActiveMedia();
+        if (m && details && typeof details.seekTime === 'number') {
+          m.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      });
+    } catch (e) { /* ignore */ }
+  }, []); // 仅挂载时初始化一次；回调通过闭包引用最新渲染的函数引用
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -367,6 +439,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVideoEnded = () => {
+    // 锁屏续播修复：若已由 timeupdate 预判推进，则不重复处理
+    if (advancingRef.current) return;
+    advancingRef.current = true;
     // 清除当前视频的播放进度（播放完成）
     if (currentVideo) {
       clearVideoPlayProgress(currentVideo.id);
