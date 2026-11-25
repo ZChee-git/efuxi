@@ -55,6 +55,7 @@ export function addTodayPlaySeconds(seconds: number) {
 // 记录localStorage键名
 const FIRST_USE_KEY = 'firstUseDate';
 const AUTH_KEY = 'authInfo';
+const USED_CODES_KEY = 'usedAuthCodes';
 
 // 播放历史相关
 const VIDEO_HISTORY_KEY = 'videoPlayHistory';
@@ -147,12 +148,40 @@ export function getAuthInfo(): { code: string; date: number } | null {
   }
 }
 
-// 设置授权信息
+// 获取已使用过的授权码列表
+export function getUsedAuthCodes(): string[] {
+  try {
+    const raw = localStorage.getItem(USED_CODES_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// 记录授权码为已使用
+export function markAuthCodeUsed(code: string) {
+  const used = getUsedAuthCodes();
+  if (!used.includes(code)) {
+    used.push(code);
+    localStorage.setItem(USED_CODES_KEY, JSON.stringify(used));
+  }
+}
+
+// 判断授权码是否已使用过（含当前正在使用的码，兼容旧版本已有授权数据）
+export function isAuthCodeUsed(code: string): boolean {
+  if (getUsedAuthCodes().includes(code)) return true;
+  const current = getAuthInfo();
+  return !!current && current.code === code;
+}
+
+// 设置授权信息（同时把该码标记为已使用，过期后不可再用）
 export function setAuthInfo(code: string) {
   localStorage.setItem(
     AUTH_KEY,
     JSON.stringify({ code, date: Date.now() })
   );
+  markAuthCodeUsed(code);
 }
 
 // 清除授权信息
@@ -160,10 +189,10 @@ export function clearAuthInfo() {
   localStorage.removeItem(AUTH_KEY);
 }
 
-// 判断是否在试用期内（30天）
+// 判断是否在试用期内（7天）
 export function isTrialValid(): boolean {
   const first = getOrSetFirstUseDate();
-  return Date.now() - first < 30 * 24 * 60 * 60 * 1000;
+  return Date.now() - first < 7 * 24 * 60 * 60 * 1000;
 }
 
 // 判断授权是否有效（一年）

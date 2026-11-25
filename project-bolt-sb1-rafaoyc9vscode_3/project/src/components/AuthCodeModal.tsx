@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { isValidAuthCode, setAuthInfo } from '../utils/authUtils';
+import { isValidAuthCode, isAuthCodeUsed, setAuthInfo } from '../utils/authUtils';
 
 interface AuthCodeModalProps {
   onSuccess: () => void;
@@ -15,6 +15,10 @@ const AuthCodeModal: React.FC<AuthCodeModalProps> = ({ onSuccess, onClose, onInf
     e.preventDefault();
     if (!isValidAuthCode(code)) {
       setError('授权码有误');
+      return;
+    }
+    if (isAuthCodeUsed(code)) {
+      setError('该授权码已激活过，请使用新的授权码');
       return;
     }
     setAuthInfo(code);
