@@ -499,7 +499,9 @@ export const usePlaylistManager = () => {
       isExtraSession,
       playlistType,
     };
-    setPlaylists(prev => [playlist, ...prev]);
+    if (items.length > 0) {
+      setPlaylists(prev => [playlist, ...prev]);
+    }
     return playlist;
   };
 
